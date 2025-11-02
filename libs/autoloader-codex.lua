@@ -1,0 +1,2 @@
+-- Codex will contain the old "spellbook" and spell_map data that we defined before, along with more info for other types of actions.
+-- The purpose of using this as the main file is to provide an easy entry point for people to modify the myriad of set mappings and calculations.
