@@ -13,9 +13,9 @@
 --   //gs c al cache size           -- show cache entry count
 --   //gs c al dbg                  -- TEMP: scan Inventory + Wardrobes and print contents
 
-local log  = require('libs/autoloader-logger')
-local sets = require('libs/autoloader-sets')
-local inv  = require('libs/autoloader-scanner')
+local log  = require('autoloader-logger')
+local sets = require('autoloader-sets')
+local inv  = require('autoloader-scanner')
 
 -- ---------- helpers ----------
 local function safe_call(fn, where, ...)
@@ -149,9 +149,7 @@ end
 
 
 local function handle_dbg()
--- inside your autoloader.lua self command for "al dbg"
-local scan = require('autoloader-scanner')
-scan.dump_equipment()
+require('autoloader-scanner').find_available_equipment()
 
 end
 
