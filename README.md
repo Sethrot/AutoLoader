@@ -1,5 +1,6 @@
 # AutoLoader
 
+Installation steps:
 1. Have GearSwap installed.
 2. Download the latest release version of AutoLoader.
 3. Unzip and paste the addons folder into your Windower directory.
