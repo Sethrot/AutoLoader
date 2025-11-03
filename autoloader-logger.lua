@@ -1,28 +1,8 @@
 -- libs/autoloader-logger.lua
 -- Rotating Logger for Windower/GearSwap (Lua 5.1-safe).
 --
--- Changes from time-based pruning:
---   • Size-based rotation: create a NEW file once current file ≥ max_bytes.
---   • Keep at most max_files log files (default 5); delete oldest on overflow.
---   • Files are timestamped: autoloader-YYYY-MM-DD_HH-MM-SS.log
---
--- Behavior:
---   • Always writes to: addons/GearSwap/data/autoloader/log/<timestamped>.log
---   • On-screen output can be toggled per level; file logging never stops.
---   • Safe to use without explicit init(); lazy-initializes on first write.
---
--- Public API (compatible with prior version + a few additions):
---   logger.set_prefix(p)
---   logger.enable_debug_screen(on)  logger.enable_info_screen(on)
---   logger.enable_warn_screen(on)   logger.enable_error_screen(on)
---   logger.enable_echo_screen(on)
---   logger.debug(fmt, ...)          logger.info(fmt, ...)
---   logger.warn(fmt, ...)           logger.error(fmt, ...)
---   logger.echo(fmt, ...)
---   -- New (optional):
---   logger.init({ max_files=?, max_bytes=?, base=? , debug_to_screen=?, ... })
---   logger.set_max_files(n)         logger.set_max_bytes(n)
---   logger.set_chat(level, on)      -- level in {"debug","info","warn","error","echo"}
+-- Key change: On init, reuse the newest log file (append) if it's under max_bytes.
+-- Only create a new file when rotating due to size, not on every init.
 --
 local logger = {}
 
@@ -32,7 +12,7 @@ local logger = {}
 logger.prefix            = "[AutoLoader]"
 
 -- On-screen toggles (file logging always on)
-logger.debug_to_screen   = false  -- default OFF (chatty)
+logger.debug_to_screen   = false
 logger.info_to_screen    = true
 logger.warn_to_screen    = true
 logger.error_to_screen   = true
@@ -86,6 +66,13 @@ end
 local function _stamp_file() return os.date("%Y-%m-%d_%H-%M-%S") end
 local function _nowstamp()   return os.date("%H:%M:%S") end
 
+local function _filesize(path)
+  local f = io.open(path, "rb"); if not f then return nil end
+  local sz = f:seek("end")
+  f:close()
+  return sz
+end
+
 -- e.g., "<...>/addons/<anyAddon>/" -> "<...>/addons/GearSwap/data/"
 local function _resolve_gearswap_data_dir()
   local addon_base = _norm((windower and windower.addon_path) or "./")
@@ -101,7 +88,6 @@ local function _ensure_dir(path)
   if windower and windower.create_dir then
     pcall(windower.create_dir, path)
   end
-  -- If windower.create_dir is not available, we rely on directories already existing.
 end
 
 -- Simple index file of filenames (one per line) to avoid directory scans.
@@ -132,8 +118,8 @@ local function _announce_once(path)
   _chat(logger.color_info, ("%s [INFO] logging to %s"):format(logger.prefix, path))
 end
 
-local function _open_new_file()
-  -- Close prior handle
+-- Create a brand-new file and rotate index/prune count.
+local function _open_fresh_file()
   if _file then pcall(_file.close, _file) end
 
   local fname = string.format("%s-%s.log", logger.base, _stamp_file())
@@ -158,25 +144,46 @@ local function _open_new_file()
   end
   _save_index()
 
-  -- Session banner
+  -- Session banner only on fresh files
   local banner = ("===== %s session start %s ====="):format(logger.prefix, os.date("%Y-%m-%d %H:%M:%S"))
   _file:write(("[%s] %s\n"):format(_nowstamp(), banner))
   _file:flush()
-  _bytes = _bytes + #banner + 12  -- rough accounting is fine here
+  _bytes = _bytes + #banner + 12
 
   _announce_once(_file_path)
+end
+
+-- Open newest file in append mode if under cap; otherwise create a fresh one.
+local function _open_latest_or_new()
+  if #_index > 0 then
+    local last = _index[#_index]
+    local full = _path_join(_dir, last)
+    local sz = _filesize(full)
+    local cap = tonumber(logger.max_bytes) or (1024*1024)
+    if sz and sz < cap then
+      if _file then pcall(_file.close, _file) end
+      _file_path = full
+      _file = io.open(full, "a")
+      if _file then
+        _bytes = sz
+        _announce_once(_file_path)
+        return
+      end
+      -- fallthrough to fresh if couldn't open append
+    end
+  end
+  _open_fresh_file()
 end
 
 local function _rotate_if_needed()
   local cap = tonumber(logger.max_bytes) or (1024*1024)
   if (_bytes or 0) >= cap then
-    _open_new_file()
+    _open_fresh_file()
   end
 end
 
 local function _ensure_ready()
   if _inited then return end
-  -- Resolve directories & index path
   local data_dir = _resolve_gearswap_data_dir()                -- abs
   local base_dir = _path_join(data_dir, "autoloader")
   local log_dir  = _path_join(base_dir, "log")
@@ -188,7 +195,7 @@ local function _ensure_ready()
   _dir        = log_dir
   _index_path = _path_join(_dir, logger.base .. ".idx")
   _load_index()
-  _open_new_file()
+  _open_latest_or_new()
   _inited = true
 end
 
@@ -223,7 +230,6 @@ end
 -- Public API
 -- =====================
 
--- Optional initializer to tweak defaults in one shot
 function logger.init(opts)
   opts = opts or {}
   if opts.prefix ~= nil then logger.prefix = tostring(opts.prefix) end
@@ -244,7 +250,7 @@ function logger.init(opts)
   if opts.max_bytes   ~= nil then logger.max_bytes  = tonumber(opts.max_bytes) or logger.max_bytes end
   if opts.base        ~= nil then logger.base       = tostring(opts.base)       or logger.base end
 
-  -- Re-init file/dir if already inited (e.g., after changing base or limits)
+  -- Re-init pathing and (re)open the latest or a new file as needed
   _inited = false
   _ensure_ready()
   return logger
@@ -264,7 +270,6 @@ function logger.set_max_files(n)
   local v = tonumber(n)
   if v and v > 0 then
     logger.max_files = v
-    -- prune immediately if needed
     if _inited and #_index > v then
       while #_index > v do
         local oldest = table.remove(_index, 1)
@@ -279,8 +284,10 @@ function logger.set_max_bytes(n)
   local v = tonumber(n)
   if v and v > 0 then
     logger.max_bytes = v
-    -- trigger rotation if current file already exceeds
-    if _inited and _bytes >= v then _open_new_file() end
+    if _inited and _bytes >= v then
+      -- If current file already exceeds the new cap, rotate now
+      _open_fresh_file()
+    end
   end
 end
 
