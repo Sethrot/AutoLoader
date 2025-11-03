@@ -1,9 +1,11 @@
 -- libs/autoloader-logger.lua
--- Rotating Logger for Windower/GearSwap (Lua 5.1-safe).
---
--- Key change: On init, reuse the newest log file (append) if it's under max_bytes.
--- Only create a new file when rotating due to size, not on every init.
---
+-- Quiet, size-rotating logger for Windower/GearSwap.
+-- - Writes to: GearSwap/data/autoloader/log/autoloader.log
+-- - Rotates to: GearSwap/data/autoloader/log/autoloader-YYYYMMDD-HHMMSS.log
+-- - Keeps at most N files total (current + rotated). Default 5.
+-- - File logging is ALWAYS on; screen output is per-level toggle.
+-- - Lua 5.1-safe.
+
 local logger = {}
 
 -- =====================
@@ -11,7 +13,11 @@ local logger = {}
 -- =====================
 logger.prefix            = "[AutoLoader]"
 
--- On-screen toggles (file logging always on)
+-- Size rotation & retention
+logger.max_bytes         = 1024 * 1024        -- ~1 MiB per file before rotate
+logger.max_files         = 5                  -- total, including current autoloader.log
+
+-- On-screen toggles (file logging ALWAYS on)
 logger.debug_to_screen   = false
 logger.info_to_screen    = true
 logger.warn_to_screen    = true
@@ -25,18 +31,12 @@ logger.color_warn        = 200
 logger.color_error       = 167
 logger.color_echo        = 204
 
--- Rotation controls
-logger.max_files         = 5                 -- keep at most 5 files
-logger.max_bytes         = 1024 * 1024      -- 1 MiB per file (recommendation)
-logger.base              = "autoloader"     -- filename base: <base>-<stamp>.log
-
+-- =====================
 -- Internal state
-local _file, _file_path, _bytes = nil, nil, 0
-local _dir,  _index_path        = nil, nil
-local _announced_path           = false
-local _file_failed_once         = false
-local _index                    = {}         -- list of filenames (oldest..newest)
-local _inited                   = false
+-- =====================
+local _dir, _current_path, _manifest_path
+local _fh, _size = nil, 0
+local _wrote_header = false
 
 -- =====================
 -- Utilities
@@ -55,258 +55,181 @@ local function _chat(color, text)
   end
 end
 
-local function _norm(p) return tostring(p or ""):gsub("\\","/") end
-local function _path_join(a,b)
-  if not a or a == "" then return b end
-  local last = a:sub(-1)
-  if last == "/" or last == "\\" then return a .. b end
-  return a .. "/" .. b
-end
+local function _nowstamp()  return os.date("%H:%M:%S") end
+local function _tsfile()    return os.date("%Y%m%d-%H%M%S") end
+local function _norm(p)     return tostring(p or ""):gsub("\\","/") end
 
-local function _stamp_file() return os.date("%Y-%m-%d_%H-%M-%S") end
-local function _nowstamp()   return os.date("%H:%M:%S") end
-
-local function _filesize(path)
-  local f = io.open(path, "rb"); if not f then return nil end
-  local sz = f:seek("end")
-  f:close()
-  return sz
-end
-
--- e.g., "<...>/addons/<anyAddon>/" -> "<...>/addons/GearSwap/data/"
 local function _resolve_gearswap_data_dir()
   local addon_base = _norm((windower and windower.addon_path) or "./")
   local addons_root = addon_base:match("^(.-/addons/)")
   if not addons_root then
-    addons_root = (addon_base:match("^(.-/)") or "./") .. "addons/"
+    local root = addon_base:match("^(.-/)") or "./"
+    addons_root = root .. "addons/"
   end
-  return _path_join(addons_root, "GearSwap/data/")
+  return addons_root .. "GearSwap/data/"
 end
 
 local function _ensure_dir(path)
-  if not path or path == "" then return end
   if windower and windower.create_dir then
     pcall(windower.create_dir, path)
   end
 end
 
--- Simple index file of filenames (one per line) to avoid directory scans.
-local function _save_index()
-  if not _index_path then return end
-  local f = io.open(_index_path, "w")
-  if not f then return end
-  for i = 1, #_index do
-    f:write(_index[i], "\n")
+local function _open_append(path)
+  local f = io.open(path, "ab")
+  if f then
+    -- find current size once; then track in-memory
+    local ok, pos = pcall(function() return f:seek("end") end)
+    _size = (ok and pos) or 0
   end
-  f:close()
+  return f
 end
 
-local function _load_index()
-  _index = {}
-  if not _index_path then return end
-  local f = io.open(_index_path, "r")
-  if not f then return end
-  for line in f:lines() do
-    if line and line ~= "" then _index[#_index+1] = line end
-  end
-  f:close()
+local function _write_manifest(list)
+  local ok = pcall(function()
+    local f = io.open(_manifest_path, "w")
+    if not f then error("manifest open fail") end
+    for i = 1, #list do f:write(list[i], "\n") end
+    f:close()
+  end)
+  return ok
 end
 
-local function _announce_once(path)
-  if _announced_path then return end
-  _announced_path = true
-  _chat(logger.color_info, ("%s [INFO] logging to %s"):format(logger.prefix, path))
-end
-
--- Create a brand-new file and rotate index/prune count.
-local function _open_fresh_file()
-  if _file then pcall(_file.close, _file) end
-
-  local fname = string.format("%s-%s.log", logger.base, _stamp_file())
-  _file_path  = _path_join(_dir, fname)
-  _file       = io.open(_file_path, "w")
-  _bytes      = 0
-  if not _file then
-    if not _file_failed_once then
-      _file_failed_once = true
-      _chat(logger.color_warn, ("%s [WARN] could not open log file: %s"):format(logger.prefix, tostring(_file_path)))
+local function _read_manifest()
+  local list, ok = {}, false
+  local f = io.open(_manifest_path, "r")
+  if f then
+    for line in f:lines() do
+      local s = line:gsub("%s+$", "")
+      if s ~= "" then list[#list+1] = s end
     end
-    return
+    f:close(); ok = true
+  end
+  return list, ok
+end
+
+local function _rotate_if_needed(incoming_len)
+  incoming_len = tonumber(incoming_len or 0) or 0
+  if (_size + incoming_len) < logger.max_bytes then
+    return -- no rotation necessary
   end
 
-  -- Track in index and prune if necessary
-  _index[#_index+1] = fname
-  while #_index > (tonumber(logger.max_files) or 5) do
-    local oldest = table.remove(_index, 1)
-    if oldest and oldest ~= "" then
-      pcall(os.remove, _path_join(_dir, oldest))
-    end
-  end
-  _save_index()
+  -- Close current handle so Windows lets us rename.
+  if _fh then pcall(function() _fh:flush(); _fh:close() end) end
+  _fh = nil
 
-  -- Session banner only on fresh files
+  -- Compute rotated name and rename current to it.
+  local rotated = ("autoloader-%s.log"):format(_tsfile())
+  local rotated_path = _dir .. rotated
+  pcall(os.rename, _current_path, rotated_path)
+
+  -- Update manifest & prune to keep (max_files - 1) rotated files
+  local list = select(1, _read_manifest())
+  list[#list+1] = rotated
+  -- If we must keep at most logger.max_files total INCLUDING the current file,
+  -- then we keep at most (max_files - 1) rotated names in the manifest:
+  while #list > math.max(0, (logger.max_files or 5) - 1) do
+    local victim = table.remove(list, 1) -- oldest
+    pcall(os.remove, _dir .. victim)
+  end
+  _write_manifest(list)
+
+  -- Recreate current file and reopen
+  _fh = _open_append(_current_path)
+  _size = 0
+  _wrote_header = false
+end
+
+local function _ensure_open()
+  if _fh then return end
+
+  local data_dir  = _resolve_gearswap_data_dir()
+  local base_dir  = data_dir .. "autoloader/"
+  _dir            = base_dir .. "log/"
+  _ensure_dir(data_dir); _ensure_dir(base_dir); _ensure_dir(_dir)
+
+  _current_path   = _dir .. "autoloader.log"
+  _manifest_path  = _dir .. "manifest.txt"
+
+  _fh = _open_append(_current_path)
+  if not _fh then
+    -- Last-ditch: try to create directories again and re-open
+    _ensure_dir(_dir)
+    _fh = _open_append(_current_path)
+  end
+end
+
+local function _maybe_header()
+  if _wrote_header then return end
+  _wrote_header = true
   local banner = ("===== %s session start %s ====="):format(logger.prefix, os.date("%Y-%m-%d %H:%M:%S"))
-  _file:write(("[%s] %s\n"):format(_nowstamp(), banner))
-  _file:flush()
-  _bytes = _bytes + #banner + 12
-
-  _announce_once(_file_path)
-end
-
--- Open newest file in append mode if under cap; otherwise create a fresh one.
-local function _open_latest_or_new()
-  if #_index > 0 then
-    local last = _index[#_index]
-    local full = _path_join(_dir, last)
-    local sz = _filesize(full)
-    local cap = tonumber(logger.max_bytes) or (1024*1024)
-    if sz and sz < cap then
-      if _file then pcall(_file.close, _file) end
-      _file_path = full
-      _file = io.open(full, "a")
-      if _file then
-        _bytes = sz
-        _announce_once(_file_path)
-        return
-      end
-      -- fallthrough to fresh if couldn't open append
-    end
-  end
-  _open_fresh_file()
-end
-
-local function _rotate_if_needed()
-  local cap = tonumber(logger.max_bytes) or (1024*1024)
-  if (_bytes or 0) >= cap then
-    _open_fresh_file()
+  local line = ("[%s] %s"):format(_nowstamp(), banner)
+  if _fh then
+    _fh:write(line, "\n"); _size = _size + #line + 1
   end
 end
 
-local function _ensure_ready()
-  if _inited then return end
-  local data_dir = _resolve_gearswap_data_dir()                -- abs
-  local base_dir = _path_join(data_dir, "autoloader")
-  local log_dir  = _path_join(base_dir, "log")
+local function _append_line(line)
+  _ensure_open()
+  if not _fh then return end
 
-  _ensure_dir(data_dir)
-  _ensure_dir(base_dir)
-  _ensure_dir(log_dir)
+  -- Rotate BEFORE writing, based on the exact incoming length.
+  _rotate_if_needed(#line + 12) -- rough timestamp + bracket cost
 
-  _dir        = log_dir
-  _index_path = _path_join(_dir, logger.base .. ".idx")
-  _load_index()
-  _open_latest_or_new()
-  _inited = true
-end
-
-local function _write_line(line)
-  _ensure_ready()
-  if not _file then return end
-  local rec = ("[%s] %s\n"):format(_nowstamp(), line)
-  _file:write(rec)
-  _file:flush()
-  _bytes = _bytes + #rec
-  _rotate_if_needed()
+  -- Write and advance size
+  _fh:write(("[%s] %s\n"):format(_nowstamp(), line))
+  _size = _size + #line + 12 -- keep it simple; exact byte count not critical
+  _fh:flush()                -- keep data durable in case of crash
 end
 
 local function _emit(level, color, fmt, ...)
+  _ensure_open()
+  _maybe_header()
+
   local body = _fmt(fmt, ...)
-  local text = ("%s [%s] %s"):format(logger.prefix, level, body)
+  local line = ("%s [%s] %s"):format(logger.prefix, level, body)
 
-  _write_line(text)
+  -- FILE: always on
+  _append_line(line)
 
-  -- On-screen (optional)
+  -- SCREEN: per-level toggles
   local show = true
-  if     level == "DEBUG" then show = not not logger.debug_to_screen
-  elseif level == "INFO"  then show = not not logger.info_to_screen
-  elseif level == "WARN"  then show = not not logger.warn_to_screen
-  elseif level == "ERROR" then show = not not logger.error_to_screen
-  elseif level == "ECHO"  then show = not not logger.echo_to_screen
+  if     level == "DEBUG" then show = logger.debug_to_screen
+  elseif level == "INFO"  then show = logger.info_to_screen
+  elseif level == "WARN"  then show = logger.warn_to_screen
+  elseif level == "ERROR" then show = logger.error_to_screen
+  elseif level == "ECHO"  then show = logger.echo_to_screen
   end
-  if show then _chat(color, text) end
+  if show then _chat(color, line) end
 end
 
 -- =====================
 -- Public API
 -- =====================
-
-function logger.init(opts)
-  opts = opts or {}
-  if opts.prefix ~= nil then logger.prefix = tostring(opts.prefix) end
-
-  if opts.debug_to_screen ~= nil then logger.debug_to_screen = not not opts.debug_to_screen end
-  if opts.info_to_screen  ~= nil then logger.info_to_screen  = not not opts.info_to_screen  end
-  if opts.warn_to_screen  ~= nil then logger.warn_to_screen  = not not opts.warn_to_screen  end
-  if opts.error_to_screen ~= nil then logger.error_to_screen = not not opts.error_to_screen end
-  if opts.echo_to_screen  ~= nil then logger.echo_to_screen  = not not opts.echo_to_screen  end
-
-  if opts.color_debug ~= nil then logger.color_debug = tonumber(opts.color_debug) or logger.color_debug end
-  if opts.color_info  ~= nil then logger.color_info  = tonumber(opts.color_info ) or logger.color_info  end
-  if opts.color_warn  ~= nil then logger.color_warn  = tonumber(opts.color_warn ) or logger.color_warn  end
-  if opts.color_error ~= nil then logger.color_error = tonumber(opts.color_error) or logger.color_error end
-  if opts.color_echo  ~= nil then logger.color_echo  = tonumber(opts.color_echo ) or logger.color_echo  end
-
-  if opts.max_files   ~= nil then logger.max_files  = tonumber(opts.max_files) or logger.max_files end
-  if opts.max_bytes   ~= nil then logger.max_bytes  = tonumber(opts.max_bytes) or logger.max_bytes end
-  if opts.base        ~= nil then logger.base       = tostring(opts.base)       or logger.base end
-
-  -- Re-init pathing and (re)open the latest or a new file as needed
-  _inited = false
-  _ensure_ready()
-  return logger
-end
-
 function logger.set_prefix(p) logger.prefix = tostring(p or logger.prefix) end
+function logger.set_max_bytes(n) logger.max_bytes = tonumber(n) or logger.max_bytes end
+function logger.set_max_files(n) logger.max_files = math.max(1, tonumber(n) or logger.max_files) end
 
--- On-screen toggles
+-- on-screen toggles
 function logger.enable_debug_screen(on) logger.debug_to_screen = not (on == false) end
 function logger.enable_info_screen(on)  logger.info_to_screen  = not (on == false) end
 function logger.enable_warn_screen(on)  logger.warn_to_screen  = not (on == false) end
 function logger.enable_error_screen(on) logger.error_to_screen = not (on == false) end
 function logger.enable_echo_screen(on)  logger.echo_to_screen  = not (on == false) end
 
--- Limits
-function logger.set_max_files(n)
-  local v = tonumber(n)
-  if v and v > 0 then
-    logger.max_files = v
-    if _inited and #_index > v then
-      while #_index > v do
-        local oldest = table.remove(_index, 1)
-        if oldest and oldest ~= "" then pcall(os.remove, _path_join(_dir, oldest)) end
-      end
-      _save_index()
-    end
-  end
-end
-
-function logger.set_max_bytes(n)
-  local v = tonumber(n)
-  if v and v > 0 then
-    logger.max_bytes = v
-    if _inited and _bytes >= v then
-      -- If current file already exceeds the new cap, rotate now
-      _open_fresh_file()
-    end
-  end
-end
-
--- Fine-grain chat mirroring (levels: "debug","info","warn","error","echo")
-function logger.set_chat(level, on)
-  local lv = (tostring(level or ""):lower())
-  if lv == "debug" then logger.debug_to_screen = not not on
-  elseif lv == "info" then logger.info_to_screen = not not on
-  elseif lv == "warn" then logger.warn_to_screen = not not on
-  elseif lv == "error" then logger.error_to_screen = not not on
-  elseif lv == "echo" then logger.echo_to_screen = not not on
-  end
-end
-
--- Emitters
+-- emitters
 function logger.debug(fmt, ...) _emit("DEBUG", logger.color_debug, fmt, ...) end
 function logger.info(fmt,  ...) _emit("INFO",  logger.color_info,  fmt, ...) end
 function logger.warn(fmt,  ...) _emit("WARN",  logger.color_warn,  fmt, ...) end
 function logger.error(fmt, ...) _emit("ERROR", logger.color_error, fmt, ...) end
 function logger.echo(fmt,  ...) _emit("ECHO",  logger.color_echo,  fmt, ...) end
+
+-- explicit flush/close (optional; GearSwap reload will drop the module anyway)
+function logger.flush()
+  if _fh then pcall(function() _fh:flush() end) end
+end
+function logger.close()
+  if _fh then pcall(function() _fh:flush(); _fh:close() end); _fh = nil end
+end
 
 return logger
