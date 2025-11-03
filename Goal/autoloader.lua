@@ -1,0 +1,4 @@
+--the main logic
+--handles gearswap hooks
+--modes, states, etc
+--handles commands

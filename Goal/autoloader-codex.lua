@@ -1,0 +1,3 @@
+--A compendium of information about ffxi actions, mainly used to inform resolver
+-- meant to be updated continously and easy to modify by random people with ffxi knowledge. strongly typed
+-- able to get_equipment(id), return the resource with an extra field .codex_info that has the rich info currently defined in codex-equip

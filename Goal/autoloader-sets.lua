@@ -1,0 +1,3 @@
+-- responible for retrieving, saving, deleting, and caching sets
+-- can take a list of setnames, return the sets.
+-- knows to find sets in order job/subjob => job/wrong sj => auto 
