@@ -1,40 +1,40 @@
 -- Copyright (c) 2025, NeatMachine
 -- All rights reserved. (BSD-3-Clause)
 
-local Spellbook = {}
+local spells = {}
 
 --These sets are mapped, in order of priority, to spells in the spell_map below.
 --Applied before (and therefore overwritten by) any set named for a specific spell (or its base).
 local CALC_SETS = {
-  MAB        = "mab",
-  MACC       = "macc",
-  MB         = "mb",
-  NUKE       = "nuke",
-  STR        = "str",
-  VIT        = "vit",
-  DEX        = "dex",
-  MND        = "mnd",
-  INT        = "int",
-  CHR        = "chr",
+  mab        = "mab",
+  macc       = "macc",
+  mb         = "mb",
+  nuke       = "nuke",
+  str        = "str",
+  vit        = "vit",
+  dex        = "dex",
+  mnd        = "mnd",
+  int        = "int",
+  chr        = "chr",
 
-  HEALING    = {
-    DEFAULT = "healing",
-    WEATHER = "healing.weather",
+  healing    = {
+    default = "healing",
+    weather = "healing.weather",
   },
 
-  ENFEEBLING = {
-    DEFAULT  = "enfeebling",
-    MACC     = "enfeebling.macc",
-    MND      = "enfeebling.mnd",
-    INT      = "enfeebling.int",
-    SKILL    = "enfeebling.skill",
-    DURATION = "enfeebling.duration",
+  enfeebling = {
+    default  = "enfeebling",
+    macc     = "enfeebling.macc",
+    mnd      = "enfeebling.mnd",
+    int      = "enfeebling.int",
+    skill    = "enfeebling.skill",
+    duration = "enfeebling.duration",
   },
 
-  ENHANCING  = {
-    DEFAULT     = "enhancing",
-    DURATION    = "enhancing.duration",
-    POTENCY     = "enhancing.potency",
+  enhancing  = {
+    default     = "enhancing",
+    duration    = "enhancing.duration",
+    potency     = "enhancing.potency",
     mnd         = "enhancing.mnd",
     skill       = "enhancing.skill",
     enspell     = "enhancing.enspell",
@@ -275,7 +275,7 @@ local NON_REFRESHABLE = {
 -----------------------------------------------------------
 local function trim(s) return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")) end
 
-local function get_base(name)
+function spells.get_base(name)
   if not name or name == "" then return "" end
   local s = tostring(name)
   local base = s:match("^(.-)%s+[IVX]+$") or s
@@ -289,7 +289,7 @@ local function push_unique(t, name, seen, dbg_reason)
     t[#t + 1] = name
     seen[name] = true
     local dbg = (rawget(_G, "AutoLoader") and AutoLoader.debug) or function() end
-    dbg("[Spellbook] push '%s'%s", name, dbg_reason and (" (" .. dbg_reason .. ")") or "")
+    dbg("[Codex] push '%s'%s", name, dbg_reason and (" (" .. dbg_reason .. ")") or "")
   end
 end
 
@@ -310,18 +310,18 @@ end
 -----------------------------------------------------------
 -- public helpers
 -----------------------------------------------------------
-function Spellbook.is_instant(spell_or_name)
+function spells.is_instant(spell_or_name)
   local name = type(spell_or_name) == "table" and (spell_or_name.english or spell_or_name.name) or spell_or_name
   return INSTANT[get_base(name)]
 end
 
-function Spellbook.is_refreshable(spell_or_name)
+function spells.is_refreshable(spell_or_name)
   local name = type(spell_or_name) == "table" and (spell_or_name.english or spell_or_name.name) or spell_or_name
   if not name then return true end
   return not NON_REFRESHABLE[get_base(name)]
 end
 
-function Spellbook.collect_spell_map_set_names(opts)
+function spells.collect_spell_map_set_names(opts)
   -- Returns a flat array of all set names referenced in spell_map, in the
   -- order they appear within each spell's list. If opts.dedupe = true,
   -- duplicates are removed while preserving first-seen order.
@@ -359,11 +359,11 @@ end
 -- core: compute ordered set names for this spell
 -- Order is highest -> lowest priority. AutoLoader resolves & combines.
 -----------------------------------------------------------
-function Spellbook.get_ordered_set_names(spell)
+function spells.get_ordered_set_names(spell)
   local dbg = (rawget(_G, "AutoLoader") and AutoLoader.debug) or function() end
   local out, seen = {}, {}
   if not spell then
-    dbg("[Spellbook] get_ordered_set_names(nil) -> []")
+    dbg("[Resolver] get_ordered_set_names(nil) -> []")
     return out
   end
 
@@ -371,7 +371,7 @@ function Spellbook.get_ordered_set_names(spell)
   local base  = get_base(name)
   local skill = (spell.skill and spell.skill:match("^(%S+)"):lower()) or "" -- "enfeebling", "dark", "enhancing", etc.
 
-  dbg("[Spellbook] resolve: name='%s' base='%s' skill='%s'", tostring(name), tostring(base), tostring(skill))
+  dbg("[Resolver] name='%s' base='%s' skill='%s'", tostring(name), tostring(base), tostring(skill))
 
   -- helper: try to fetch a mapping (array or string) for a given key from either a flat or grouped map
   local function lookup_map(key)
@@ -427,18 +427,18 @@ function Spellbook.get_ordered_set_names(spell)
   -- 5) Finally the exact spell's explicit set name (e.g., "drain_ii")
   push_unique(out, explicit_key(name), seen, "explicit-exact")
 
-  dbg("[Spellbook] ordered => [%s]", tbl_join(out))
+  dbg("[Resolver] ordered => [%s]", tbl_join(out))
   return out
 end
 
 -----------------------------------------------------------
 -- expose internals (optional: for tests / tooling)
 -----------------------------------------------------------
-Spellbook._internal = {
+spells._internal = {
   CALC_SETS       = CALC_SETS,
   spell_map       = spell_map,
   INSTANT         = INSTANT,
   NON_REFRESHABLE = NON_REFRESHABLE,
 }
 
-return Spellbook
+return spells

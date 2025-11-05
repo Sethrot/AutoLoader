@@ -4,17 +4,15 @@
 --   { equipment = <res.items[id]>,
 --     stats = { ...data-rich parse output... } }
 
+-- libs/autoloader-resolver.lua (and others)
+local autoloader = rawget(_G, 'autoloader') or error('autoloader not initialized')
 local res             = require('resources')
-local log             = require('autoloader-logger')
 local ok_ext, extdata = pcall(require, 'extdata')
 
 local M = {}
 
 -- Tag prefix for module logs
 local TAG = "[AL:codex]"
-local function dbg(fmt, ...)   log.debug(TAG .. " " .. fmt, ...) end
-local function info(fmt, ...)  log.info (TAG .. " " .. fmt, ...) end
-local function warn(fmt, ...)  log.warn (TAG .. " " .. fmt, ...) end
 
 -- =====================
 -- Constants + helpers
@@ -185,7 +183,7 @@ local function build_matchers()
       out[#out+1] = { stat_key=stat_key, label=label, pattern=pat }
     end
   end
-  dbg("built %d stat matchers", #out)
+  autoloader.logger.debug("built %d stat matchers", #out)
   return out
 end
 
@@ -228,12 +226,12 @@ local function parse_ilvl(desc)
 end
 
 local function _log_hits(hits, text)
-  dbg("extracted %d hits:", hits and #hits or 0)
+  autoloader.logger.debug("extracted %d hits:", hits and #hits or 0)
   for i, h in ipairs(hits or {}) do
     local s0 = (h.span and h.span[1] or -1) + 1
     local e0 = (h.span and h.span[2] or 0)
     local rawseg = (text and text:sub(s0, e0)) or ""
-    dbg("  #%d key=%-14s val=%s%s sign=%s unit=%s (%s) tag=%s span=[%d,%d] raw=%q",
+    autoloader.logger.debug("  #%d key=%-14s val=%s%s sign=%s unit=%s (%s) tag=%s span=[%d,%d] raw=%q",
         i,
         tostring(h.key or "?"),
         tostring(h.value or "?"),
@@ -249,9 +247,9 @@ end
 
 local function parse_stats(desc_text)
   local raw = desc_text or ""
-  dbg("desc raw len=%d", #raw)
+  autoloader.logger.debug("desc raw len=%d", #raw)
   local text = sanitize_base_text(raw)
-  dbg("regex input (sanitized, len=%d): %s", #text, text)
+  autoloader.logger.debug("regex input (sanitized, len=%d): %s", #text, text)
 
   local hits = {}
   for _, m in ipairs(get_matchers()) do
@@ -344,12 +342,12 @@ function M.get_equipment(ref, opts)
   opts = opts or {}
   local id = resolve_id(ref)
   if not id then
-    dbg("resolve_id failed for ref=%s", tostring(ref))
+    autoloader.logger.debug("resolve_id failed for ref=%s", tostring(ref))
     return nil
   end
   local it = item_def(id)
   if not is_equipment_record(it) then
-    dbg("id=%s is not equipment (category=%s, slots=%s)", tostring(id), tostring(it and it.category or "nil"), tostring(it and it.slots or "nil"))
+    autoloader.logger.debug("id=%s is not equipment (category=%s, slots=%s)", tostring(id), tostring(it and it.category or "nil"), tostring(it and it.slots or "nil"))
     return nil
   end
 

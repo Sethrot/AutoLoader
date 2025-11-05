@@ -1,4 +1,0 @@
--- scanner is responsible for finding the player's equippable gear
--- passing it into codex to understand its stats
--- using resolver to choose the best sets based on available gear for the predefined setnames (where it's also mapped relevant stats (using codex consts) for those setnames)
--- then use autolaoder-sets to save these new equipment sets to the data/autoloader/auto folder

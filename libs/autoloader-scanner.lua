@@ -3,7 +3,8 @@
 -- No regex or description parsing here—only uses resource fields.
 -- Lua 5.1 safe.
 
-local log     = require('autoloader-logger')
+local autoloader = rawget(_G, 'autoloader') or error('autoloader not initialized')
+
 local res     = require('resources')
 local ok_ext, extdata = pcall(require, 'extdata')
 local codex   = require('autoloader-codex-equipment')
@@ -26,11 +27,11 @@ end
 local function dbg(fmt, ...)
   if not SCAN_DEBUG then return end
   local msg = _fmt(fmt, ...)
-  if log and type(log.debug) == "function" then
+  if log and type(autoloader.log.debug) == "function" then
     if _unpack then
-      pcall(log.debug, "%s %s", SCAN_TAG, msg)
+      pcall(autoloader.log.debug, "%s %s", SCAN_TAG, msg)
     else
-      pcall(log.debug, SCAN_TAG .. " " .. msg)
+      pcall(autoloader.log.debug, SCAN_TAG .. " " .. msg)
     end
   elseif windower and windower.add_to_chat then
     windower.add_to_chat(123, SCAN_TAG .. " " .. msg)
