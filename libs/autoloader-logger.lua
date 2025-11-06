@@ -27,51 +27,27 @@ logger.mode = M { ["description"] = "Log", _VERBOSITY.OFF, _VERBOSITY.ERROR, _VE
 -- TODO: try getting from file settings
 logger.mode:set(logger.options.verbosity)
 
-local function word_wrap(msg)
-  local out, line, len, limit = {}, "", 0, logger.options.max_chars_per_line
-  for word, sep in msg:gmatch("(%S+)(%s*)") do
-    local wlen = #word
-    if len > 0 and (len + 1 + wlen) > limit then
-      out[#out + 1] = line
-      line, len = word, wlen
-    else
-      if len > 0 then
-        line, len = (line .. " " .. word), (len + 1 + wlen)
-      else
-        line, len = word, wlen
-      end
-    end
-    -- if a single word is longer than limit, hard-split it
-    while len > limit do
-      out[#out + 1] = line:sub(1, limit)
-      line          = line:sub(limit + 1)
-      len           = #line
-    end
-  end
-  if len > 0 then out[#out + 1] = line end
-  return out
+local function sticky_chat_color(s, color_index)
+  if not s or s == '' then return '' end
+  local cc = string.char(0x1F, color_index or logger.options.color)
+  -- Reapply color after common wrap points (space, comma, semicolon, colon)
+  return cc .. s:gsub('([ ,;:])', '%1' .. cc)
 end
 
 local function format_message(tag, msg, color)
   if windower and windower.add_to_chat then
+    if type(msg) ~= "string" then
+      msg = tostring(msg)
+    end
     local sanitized = msg
         :gsub("[\r\n\t]", " ")    -- normalize line breaks/tabs to space
         :gsub("\194\160", " ")    -- non-breaking space (UTF-8) -> space (optional but handy)
         :gsub("[%z\1-\31\127]", "") -- strip control chars
-        :gsub("%s+", " ")         -- collapse whitespace runs
-        :gsub("^%s+", "")         -- trim left
-        :gsub("%s+$", "")         -- trim right
 
-    local head = ("%s%s "):format(logger.options.prefix, (tag and tag ~= "" and "(" .. tag .. ")") or "")
-    local lines = word_wrap(sanitized)
-
-    for i = 1, #lines do
-      local line = head .. lines[i]
-        windower.add_to_chat(color, line)
-    end
-    return true, nil
+    local prefix = ("%s%s "):format(logger.options.prefix, (tag and tag ~= "" and "(" .. tag .. ")") or "")
+    windower.add_to_chat(color, sticky_chat_color(prefix .. sanitized, color))
   else
-    return false, logger.options.prefix .. " Log failure: windower.add_to_chat not available."
+    print("AutoLoader Error: Couldn't find windower.add_to_chat.")
   end
 end
 
@@ -96,8 +72,57 @@ function logger.error(msg)
   end
 end
 
-function logger.export_to_file(path)
-  logger.error("logger.export_to_file not yet implemented.")
+-- Pretty-print any Lua value and log via autoloader.logger.debug
+function logger.dump(obj, opts, _seen, _depth)
+  opts   = opts or {}
+  local max_depth = opts.depth or 4       -- nesting limit
+  local str_max   = opts.str_max or 200   -- truncate long strings
+  local max_items = opts.max_items        -- cap items per table (nil = no cap)
+
+  _seen  = _seen or {}
+  _depth = _depth or 0
+
+  local function prettify(v, seen, depth)
+    local tv = type(v)
+    if tv ~= "table" then
+      if tv == "string" then
+        local s = tostring(v)
+        if #s > str_max then s = s:sub(1, str_max) .. "…" end
+        return string.format("%q", s)
+      end
+      return tostring(v)
+    end
+    if seen[v] then return "<cycle>" end
+    if depth >= max_depth then return "{…}" end
+    seen[v] = true
+
+    -- stable key order
+    local keys, n = {}, 0
+    for k in pairs(v) do n = n + 1; keys[n] = k end
+    table.sort(keys, function(a,b) return tostring(a) < tostring(b) end)
+
+    local parts, count = {"{"}, 0
+    for _, k in ipairs(keys) do
+      count = count + 1
+      if not max_items or count <= max_items then
+        local kv = ("[%s]=%s"):format(tostring(k), prettify(v[k], seen, depth + 1))
+        parts[#parts+1] = kv .. ","
+      else
+        parts[#parts+1] = "…"
+        break
+      end
+    end
+    parts[#parts+1] = "}"
+    seen[v] = nil
+    -- top level: multiline; nested: compact
+    return table.concat(parts, depth == 0 and "\n" or " ")
+  end
+
+  local out = prettify(obj, _seen, _depth)
+  for line in out:gmatch("[^\n]+") do
+    logger.debug(line)
+  end
 end
+
 
 return logger

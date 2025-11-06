@@ -18,10 +18,6 @@ function utils.pretty_mode_value(value)
   return _mode_display_names[value] or value
 end
 
-function utils.normalize_set_name(name)
-    return (tostring(name or ""):gsub("'", ""):gsub("%s+", "_"):lower())
-end
-
 function utils.pretty_weapon_name(weapon)
   if weapon then
     return ("%s(%s)"):format((weapon.display_name and weapon.display_name .. " ") or "", weapon.id)
@@ -54,6 +50,15 @@ end
 function utils.get_keys_sorted(map)
   return utils.get_keys(map):sort()
 end
+
+function utils.split3_by_dot(s)
+  local a,b,c = s:match("^([^%.]+)%.([^%.]+)%.(.+)$")
+  if a then return a,b,c end
+  a,b = s:match("^([^%.]+)%.(.+)$")
+  if a then return a,b,nil end
+  return s,nil,nil
+end
+
 
 function utils.escape_lua_pattern(s)
   return (tostring(s or ""):gsub("(%W)", "%%%1"))
@@ -155,6 +160,38 @@ function utils.remove_file(path)
   end
 end
 
+----------------------------------------------------------------
+-- Lightweight async wait: wait_for_file(path[, timeout_s[, period_s]],
+--                                       on_ready[, on_timeout])
+-- Defaults: timeout=1.0s, period=0.20s
+----------------------------------------------------------------
+function utils.wait_for_file(path, timeout_s, period_s, on_ready, on_timeout)
+  path      = tostring(path or '')
+  timeout_s = tonumber(timeout_s) or 3.0
+  period_s  = tonumber(period_s)  or 0.10
+
+  local deadline = os.clock() + timeout_s
+
+  local function step()
+    if windower.file_exists(path) then
+      if autoloader and autoloader.logger and autoloader.logger.debug then
+      end
+      if on_ready then pcall(on_ready, path) end
+      return
+    end
+
+    if os.clock() >= deadline then
+      if on_timeout then pcall(on_timeout, path) end
+      return
+    end
+
+    coroutine.schedule(step, period_s)
+  end
+
+  step() -- kick off
+end
+
+
 function utils.move_file(src, dst)
   utils.ensure_dir(utils.get_directory_name(dst))
   utils.remove_file(dst)
@@ -167,38 +204,6 @@ function utils.move_file(src, dst)
   out_f:write(data); out_f:close()
   os.remove(src)
   return true, nil
-end
-
--- Non-blocking wait for a file to appear.
--- Calls on_ready() when found, or on_timeout() if not found before timeout.
-function utils.await_file(path, opts, on_ready, on_timeout)
-  opts = opts or {}
-  local poll_s   = tonumber(opts.every or 0.10)
-  local timeout  = tonumber(opts.timeout or 3.0)
-  local deadline = os.clock() + timeout
-  path = tostring(path or "")
-
-  local function step()
-    if windower.file_exists(path) then
-      if on_ready then on_ready(path) end
-      return
-    end
-    if os.clock() >= deadline then
-      if on_timeout then on_timeout(path) end
-      return
-    end
-    -- Re-schedule the next check without blocking the UI.
-    if coroutine and coroutine.schedule then
-      coroutine.schedule(step, poll_s)
-    else
-      -- Fallback: yield-friendly sleep if available (still avoids busy-wait)
-      if coroutine and coroutine.sleep then coroutine.sleep(poll_s) end
-      step()
-    end
-  end
-
-  -- kick it off
-  step()
 end
 
 function utils.starts_with(s, prefix)
@@ -266,6 +271,12 @@ end
 
 function utils.get_mode_options(mode)
   return utils.get_array_values(mode and (mode.options or mode))
+end
+
+function utils.ascii_only(s)
+  s = tostring(s or ""):gsub("[\r\n]", " ")
+  s = s:gsub("[%z\1-\8\11\12\14-\31]", "")
+  return s
 end
 
 return utils

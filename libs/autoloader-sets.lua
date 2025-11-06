@@ -52,9 +52,8 @@ local function get_export_path()
   return utils.join_paths(_root, ("data/export"))
 end
 
-local function get_subjob_path(subjob)
-  return utils.join_paths(_root,
-    ("data/autoloader/jobs/%s/%s"):format(windower.ffxi.get_player().main_job:lower(), (subjob or "default"):lower()))
+local function get_job_path()
+  return utils.join_paths(_root, ("data/autoloader/jobs/%s"):format(windower.ffxi.get_player().main_job:lower()))
 end
 
 local function get_auto_path()
@@ -85,19 +84,19 @@ end
 
 local function load_set(abs_filename)
   if not windower.file_exists(abs_filename) then
-    autoloader.logger.debug("load_set() file: " .. filename .. " does not exist.")
+    autoloader.logger.debug("load_set() file: " .. abs_filename .. " does not exist.")
     return
   end
 
   local f, ferr = io.open(abs_filename, "rb")
   if not f then
-    autoloader.logger.debug(("load_set() couldn't open file %s: %s"):format(filename, tostring(ferr)))
+    autoloader.logger.debug(("load_set() couldn't open file %s: %s"):format(abs_filename, tostring(ferr)))
     return
   end
 
   local src = f:read("*a"); f:close()
   if not src or src == "" then
-    autoloader.logger.debug("load_set() empty file: " .. filename)
+    autoloader.logger.debug("load_set() empty file: " .. abs_filename)
     return
   end
 
@@ -123,38 +122,39 @@ local function load_set(abs_filename)
   end
 
   if not anchor_pos then
-    autoloader.logger.debug(("Couldn't parse %s, no table anchor (return/sets.exported/sets) found"):format(filename))
+    autoloader.logger.debug(("Couldn't parse %s, no table anchor (return/sets.exported/sets) found"):format(abs_filename))
     return
   end
 
   local brace_pos = normalized_content:find("%{", anchor_pos)
   if not brace_pos then
-    autoloader.logger.debug(("Couldn't parse %s, anchor without opening brace"):format(filename))
+    autoloader.logger.debug(("Couldn't parse %s, anchor without opening brace"):format(abs_filename))
     return
   end
 
   local table_src = utils.slice_balanced_braces(src, brace_pos)
   if not table_src then
-    autoloader.logger.debug(("Couldn't parse %s, unbalanced braces"):format(filename))
+    autoloader.logger.debug(("Couldn't parse %s, unbalanced braces"):format(abs_filename))
     return
   end
 
-  local fn, cerr = compile_table_expr(table_src, "@AutoLoader:" .. (filename or "set"))
+  local fn, cerr = compile_table_expr(table_src, "@AutoLoader:" .. (abs_filename or "set"))
   if not fn then
-    autoloader.logger.debug(("%s compilation failed: %s"):format(filename, tostring(cerr)))
+    autoloader.logger.debug(("%s compilation failed: %s"):format(abs_filename, tostring(cerr)))
     return
   end
 
   local ok, result = pcall(fn)
   if not ok then
-    autoloader.logger.debug(("%s evaluation failed: %s"):format(filename, tostring(result)))
+    autoloader.logger.debug(("%s evaluation failed: %s"):format(abs_filename, tostring(result)))
     return
   end
 
   if result == nil then
-    autoloader.logger.debug(("Loaded %s (%s) but it produced nil"):format(filename, label or "?"))
+    autoloader.logger.debug(("Loaded %s (%s) but it produced nil"):format(abs_filename, label or "?"))
   else
-    autoloader.logger.debug(("Loaded %s (%s)"):format(filename, label or "?"))
+    autoloader.logger.debug(("Loaded %s (%s)"):format(abs_filename, (label or "?")))
+    return result
   end
 end
 
@@ -168,34 +168,35 @@ function sets.build_set(...)
 
   local combined, count = nil, 0
   for i, name in ipairs(args) do
-    local n = utils.normalize_set_name(name)
+    local n = resolver.sanitize(name)
     local part = sets.get(n)
+
     if type(part) == "table" then
       combined = (combined == nil) and part or set_combine(combined or {}, part or {})
       count = count + 1
-      autoloader.logger.debug(("BuildSet: added %s"):format(n))
+      autoloader.logger.debug(("sets.build_set(): added %s"):format(n))
     else
       if part == nil then
-        autoloader.logger.debug(("BuildSet: not found %s"):format(n))
+        autoloader.logger.debug(("sets.build_set(): not found %s"):format(n))
       else
-        autoloader.logger.debug(("BuildSet: %s returned %s; skipped"):format(n, type(part)))
+        autoloader.logger.debug(("sets.build_set(): %s returned %s; skipped"):format(n, type(part)))
       end
     end
   end
 
   if not combined then
-    autoloader.logger.debug("BuildSet: no sets resolved")
+    autoloader.logger.debug("sets.build_set(): no sets resolved")
     return nil
   end
 
-  autoloader.logger.debug(("BuildSet: combined %d set(s)"):format(count))
+  autoloader.logger.debug(("sets.build_set(): combined %d set(s)"):format(count))
   return combined
 end
 
 function sets.get(name)
   if not name or type(name) ~= "string" then return nil end
 
-  name = utils.normalize_set_name(name)
+  name = resolver.sanitize(name)
   local filename = ("%s%s%s.lua"):format(get_exported_file_prefix(), get_job_prefix(), name)
   autoloader.logger.debug(("Looking for file: %s"):format(filename))
 
@@ -203,48 +204,28 @@ function sets.get(name)
   if _cache and _cache[name] then return _cache[name] end
 
   -- Try to load set from current job/subjob path
-  local job, current_subjob = windower.ffxi.get_player().main_job:lower(), windower.ffxi.get_player().sub_job:lower()
-  local subjob_file = utils.join_paths(get_subjob_path(current_subjob), filename)
-  autoloader.logger.debug("Looking in " .. subjob_file)
-  local set = windower.file_exists(subjob_file) and load_set(subjob_file)
+  local job_file = utils.join_paths(get_job_path(), filename)
+  local set = windower.file_exists(job_file) and load_set(job_file)
   if set then
+    autoloader.logger.debug("job_file set: " .. tostring(set))
     _cache[name] = set
     return _cache[name]
   end
 
-  -- Try to load set from current job/other subjob path
-  -- Enumerate folders under data/autoloader/jobs/<job>/
-  local base = utils.join_paths(_root, "data/autoloader/jobs")
-  local main_job_dir = utils.join_paths(base, windower.ffxi.get_player().main_job:lower())
-  local subjob_folders = list_folders(main_job_dir)
-  for _, subjob in ipairs(subjob_folders) do
-    if subjob ~= current_subjob then
-      local fallback_file = utils.join_paths(get_subjob_path(subjob), filename)
-      autoloader.logger.debug("Looking in " .. fallback_file)
-      local fallback_set = windower.file_exists(fallback_file) and load_set(fallback_file)
-      if fallback_set then
-        _cache[name] = fallback_set
-        return _cache[name]
-      end
-    end
-  end
-
   -- Try to load set from auto-generated folder
   local auto_file = utils.join_paths(get_auto_path(), filename)
-  autoloader.logger.debug("Looking in " .. auto_file)
   local auto_set = windower.file_exists(auto_file) and load_set(auto_file)
   if auto_set then
+    autoloader.logger.debug("auto_file set: " .. tostring(auto_set))
     _cache[name] = auto_set
     return _cache[name]
   end
-
-  return
 end
 
 function sets.save(name, path)
   if not name then return false, "sets.save() name is required." end
 
-  local resolved_name = resolver.resolve_save_set(name)
+  local resolved_name = resolver.resolve_user_set_name(name)
   local exported_filename = get_exported_file_name(resolved_name)
   local exported_file = utils.join_paths(get_export_path(), exported_filename)
 
@@ -253,27 +234,25 @@ function sets.save(name, path)
     autoloader.logger.debug("Deleted existing file: " .. exported_file)
   end
 
-  local gearswap_export_cmd = ('gs export filename %s%s'):format(get_job_prefix(), resolved_name)
+  local gearswap_export_cmd = ("gs export filename %s%s"):format(get_job_prefix(), resolved_name)
   autoloader.logger.debug(("Exporting via GearSwap: %s"):format(gearswap_export_cmd))
   windower.send_command(gearswap_export_cmd)
 
-  utils.await_file(exported_file, { every = 0.10, timeout = 1.0 },
-    function()
-      autoloader.logger.debug("Found export: " .. exported_file)
-      if not windower.file_exists(exported_file) then
-        autoloader.logger.error(("Could not find exported file: %s"):format(exported_file))
-        return
-      end
-
-      local target_file = utils.join_paths(path or get_subjob_path(windower.ffxi.get_player().sub_job), exported_filename)
-      autoloader.logger.debug(("Moving export to: %s"):format(target_file))
-
-      return utils.move_file(exported_file, target_file)
+  utils.wait_for_file(
+    exported_file,
+    1.5, 0.25,
+    function(_) -- on_ready
+      local target_file = utils.join_paths(path or get_job_path(), exported_filename)
+      local ok, err = utils.move_file(exported_file, target_file)
+      if not ok then autoloader.logger.error(("Failed to save %s with error: %s"):format(target_file, err)) return end
+      autoloader.logger.info("Saved set: " .. target_file)
     end,
-    function()
-        autoloader.logger.error(("Could not find exported file: %s"):format(exported_file))
+    function(_) -- on_timeout
+      autoloader.logger.error(("Could not find GearSwap export, expected: %s"):format(exported_file))
     end
   )
+
+  return
 end
 
 function sets.delete(name)
