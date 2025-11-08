@@ -15,10 +15,10 @@ Topic('set', {
     title    = "set",
     desc     = "Show and manage equipment sets.",
     usage    = { "set <action>" },
-    params   = { "<action> ::= show | load | save | delete" },
-    examples = { "gs c set save idle", "gs c set save savage blade", "gs c set show cure", "gs c set show", "gs c load melee", },
+    params   = { "<action> ::= save | load | list | delete | reload" },
+    examples = { "gs c set save idle", "gs c set save savage blade", "gs c set load cure", "gs c set list" },
     dynamic  = function()
-        return "Aware of current modes and weapon. Current:"
+        return "Aware of selected mode and weapon. Current:"
             .. "\nIdle: " .. utils.pretty_mode_value(autoloader.get_idle_mode()) .. ", "
             .. "\nMelee: " .. utils.pretty_mode_value(autoloader.get_melee_mode()) .. ", "
             .. "\nMagic: " .. utils.pretty_mode_value(autoloader.get_magic_mode()) .. ", "
@@ -66,24 +66,6 @@ Topic('weapon', {
     end,
 })
 
-Topic('echodrops', {
-    title    = "echodrops",
-    desc     = "Enable or disable auto echo drops.",
-    usage    = { "echodrops", "echodrops <mode>" },
-    params   = { "<mode> ::= on | off" },
-    examples = { "gs c a echodrops on", "gs c a echodrops off" },
-    dynamic  = function() return "Current: " .. utils.pretty_mode_value(autoloader.get_auto_echo_drops()) end,
-})
-
-Topic('remedy', {
-    title    = "remedy",
-    desc     = "Enable or disable auto remedy.",
-    usage    = { "remedy", "remedy <mode>" },
-    params   = { "<mode> ::= on | off" },
-    examples = { "gs c a remedy on", "gs c a remedy off" },
-    dynamic  = function() return "Current: " .. utils.pretty_mode_value(autoloader.get_auto_remedy()) end,
-})
-
 Topic('movement', {
     title    = "movement",
     desc     = "Enable or disable polling for auto movement equip.",
@@ -115,10 +97,6 @@ Topic('help', {
     examples = { "gs c auto help set", "gs c a help movement" },
 })
 
-local function log(msg)
-    autoloader.logger.info(msg, true)
-end
-
 local function handle_help_command(cmd)
     cmd = cmd and tostring(cmd):lower() or nil
     local topic = cmd and _help_topics[cmd]
@@ -145,7 +123,6 @@ local function handle_help_command(cmd)
     end
 end
 
-
 local function handle_idle_command(cmd)
     if cmd then
         autoloader.set_idle_mode(cmd)
@@ -171,19 +148,25 @@ local function handle_magic_command(cmd)
 end
 
 local function handle_weapon_command(cmd)
+    cmd = tostring(cmd or "")
+    local a1, tail = cmd:match("^(%S+)%s*(.*)$")
+    a1 = (a1 or ""):lower()
+    local a2 = (tail ~= "" and tail) or nil
 
+    if a1 == "save" then
+        
+    elseif a1 == "delete" then
+
+    elseif a1 == "select" then
+        
+    end
 end
 
 local function handle_movement_command(cmd)
-
-end
-
-local function handle_echodrops_command(cmd)
-
-end
-
-local function handle_remedy_command(cmd)
-
+    if cmd then
+        autoloader.set_auto_movement(cmd)
+        return
+    end
 end
 
 local function handle_set_command(cmd)
@@ -194,22 +177,40 @@ local function handle_set_command(cmd)
 
     if a1 == "save" then
         sets.save(a2)
+    elseif a1 == "load" then
+        local set = sets.get(a2)
+        if not set then autoloader.logger.info("Could not find set: " .. a2) return end
+        equip(set)
+        autoloader.logger.info("Loaded " .. a2)
+    elseif a1 == "list" then
+        local saved_sets = sets.list()
+        autoloader.logger.info("Sets:")
+        if saved_sets then
+            -- log saved set names
+        end
+    elseif a1 == "delete" then
+        local result = sets.delete(a2)
+        if result then autoloader.logger.info("Deleted " .. a1) end
+    elseif a1 == "reload" then
+        local result = sets.clear_cache()
+        if result then autoloader.logger.info("Cleared sets cache.") end
     end
 end
 
 local function handle_log_command(cmd)
-
+    if cmd then
+        autoloader.set_log_mode(cmd)
+        return
+    end
+    autoloader.cycle_log_mode()
 end
 
 function commands.handle(cmd)
-    autoloader.logger.debug("handle cmd: " .. tostring(cmd or ""))
-
     local a1, tail = cmd:match("^%s*a%s+(%S+)%s*(.*)$")
     if not a1 then a1, tail = cmd:match("^%s*auto%s+(%S+)%s*(.*)$") end
     if not a1 then a1, tail = cmd:match("^%s*autoloader%s+(%S+)%s*(.*)$") end
 
     local a2 = (tail ~= "" and tail) or nil
-    autoloader.logger.debug(("handle a1: %s, a2: %s"):format(a1 or "?", a2 or "?"))
 
     if a1 == "log" then
         handle_log_command(a2)
@@ -221,12 +222,8 @@ function commands.handle(cmd)
         handle_magic_command(a2)
     elseif a1 == "weapon" then
         handle_weapon_command(a2)
-    elseif a1 == "auto_movement" then
+    elseif a1 == "movement" then
         handle_movement_command(a2)
-    elseif a1 == "echodrops" then
-        handle_echodrops_command(a2)
-    elseif a1 == "remedy" then
-        handle_remedy_command(a2)
     elseif a1 == "set" then
         handle_set_command(a2)
     elseif a1 == "help" then

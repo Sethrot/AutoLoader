@@ -252,7 +252,6 @@ function sets.save(name, path)
     end
   )
 
-  return
 end
 
 function sets.delete(name)
@@ -263,6 +262,9 @@ function sets.get_weapons()
   -- TODO
 
   return weapons
+end
+
+function sets.list()
 end
 
 function sets.clear_cache()

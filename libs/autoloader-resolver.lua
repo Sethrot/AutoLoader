@@ -68,7 +68,7 @@ function resolver.resolve_current_melee_set_names()
 end
 
 function resolver.resolve_current_magic_set_names()
-    return resolve_mode_set_names_with_weapon("melee", autoloader.get_current_magic_mode(), autoloader.get_current_weapon())
+    return resolve_mode_set_names_with_weapon("magic", autoloader.get_current_magic_mode(), autoloader.get_current_weapon())
 end
 
 function resolver.resolve_precast_set_names(spell)
@@ -113,6 +113,12 @@ function resolver.resolve_midcast_set_names(spell)
             set_names:append(base_name)
         end
 
+        local predefined_set = codex.SPELL_CASTING_SETS[spell]
+        if predefined_set then set_names:append(predefined_set) end
+
+        local base_predefined_set = codex.SPELL_CASTING_SETS[codex.get_base(spell)]
+        if base_predefined_set then set_names:append(base_predefined_set) end
+
         local skill_name = spell.skill and resolver.sanitize(spell.skill:match("^(%S+)"))
         if skill_name then set_names:append("midcast." .. skill_name) end
         if skill_name then set_names:append(skill_name) end
@@ -130,12 +136,12 @@ function resolver.resolve_aftercast_set_names(spell)
     return set_names:reverse()
 end
 
-function resolver.resolve_user_set_name(name)
-    if not name then autoloader.logger.error("resolve_user_set_name() name is required."); return end
+function resolver.resolve_save_set_name(name)
+    if not name then autoloader.logger.error("resolve_save_set_name() name is required."); return end
 
     local p1, p2, p3 = get_sanitized_name_parts(name)
 
-    if not p1 then autoloader.logger.error("resolve_user_set_name() invalid name: " .. name); return end
+    if not p1 then autoloader.logger.error("resolve_save_set_name() invalid name: " .. name); return end
 
     if p1 == "idle" or p1 == "melee" or p1 == "magic" then
         -- Set is for a mode
@@ -146,16 +152,16 @@ function resolver.resolve_user_set_name(name)
         if not p2 then
             if current_mode and current_mode ~= "default" then
                 p2 = current_mode -- Saving "idle" under DT idle mode will save idle.dt
-                autoloader.logger.debug("resolve_user_set_name() Added current " .. p1 .. " mode modifier => " .. p2)
+                autoloader.logger.debug("resolve_save_set_name() Added current " .. p1 .. " mode modifier => " .. p2)
             end
         elseif p2 == "default" then
             p2 = nil -- Default is implied by no arg
-            autoloader.logger.debug("resolve_user_set_name() removed default modifier.")
+            autoloader.logger.debug("resolve_save_set_name() removed default modifier.")
         elseif utils.starts_with(p2, "weapon") then
             -- idle.weapon1 is valid, but we'll move it to p3 to simplify processing
             p3 = p2
             p2 = nil
-            autoloader.logger.debug("resolve_user_set_name() Moved weapon to from p2 to p3 => " .. p3)
+            autoloader.logger.debug("resolve_save_set_name() Moved weapon to from p2 to p3 => " .. p3)
         elseif not utils.starts_with_any(p2, current_mode_options) then
             -- There's some invalid mode part specified
             autoloader.logger.error("Invalid mode value: " .. p2)
@@ -171,17 +177,17 @@ function resolver.resolve_user_set_name(name)
             elseif weapon_id == tostring(0) then
                 -- weapon0 is valid, but it's implied so we'll remove it.
                 p3 = nil
-                autoloader.logger.debug("resolve_user_set_name() Removed default weapon value from set name => " .. p3)
+                autoloader.logger.debug("resolve_save_set_name() Removed default weapon value from set name => " .. p3)
             end
         elseif current_weapon and current_weapon.id and current_weapon.id ~= 0 then
             -- Weapon wasn't specified, but a weapon is assigned. We'll add the modifier.
             p3 = "weapon" .. current_weapon.id
-            autoloader.logger.debug("resolve_user_set_name() Added selected weapon to set name => " .. p3)
+            autoloader.logger.debug("resolve_save_set_name() Added selected weapon to set name => " .. p3)
         end
 
         return ("%s%s%s"):format(p1, (p2 and ("." .. p2)) or "", (p3 and ("." .. p3)) or "")
     else
-       return resolver.sanitize(name)
+       return resolver.sanitize(name:gsub(".default", ""))
     end
 end
 
