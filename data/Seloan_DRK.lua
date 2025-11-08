@@ -2,7 +2,6 @@
 -- Minimal Dark Knight (DRK) configuration file with AutoLoader support
 
 include("autoloader") -- Congratulations, you're done!
-local common = include("common")
 
 -- Remember to save your basic sets:
 -- //gs c save idle
@@ -20,9 +19,3 @@ local common = include("common")
 
 -- //gs c save drain
 ------ This will be recognized by Drain II, III as well. (and Aspir)
-
-
-function before_precast(spell)
-    local terminate = common.auto_remedy(spell)
-    if terminate then return true end
-end
