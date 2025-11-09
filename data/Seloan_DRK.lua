@@ -1,7 +1,10 @@
 -- Seloan_DRK.lua
 -- Minimal Dark Knight (DRK) configuration file with AutoLoader support
 
-include("autoloader") -- Congratulations, you're done!
+local job = require("autoloader-job")
+--job.auto_echo_drops = true
+--job.auto_remedy = true
+--job.auto_movement = true
 
 -- Remember to save your basic sets:
 -- //gs c save idle

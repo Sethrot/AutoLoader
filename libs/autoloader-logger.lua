@@ -1,4 +1,4 @@
-include("Modes")
+require("Modes")
 
 local logger = {}
 
@@ -18,13 +18,11 @@ local _verbosity_display = {
 
 logger.options = {
   prefix = "[AutoLoader]",
-  verbosity = _VERBOSITY.DEBUG, -- TODO: For dev only
+  verbosity = _VERBOSITY.DEBUG, -- TODO: DEV MODE, CHANGE => INFO
   color = 207,
   max_chars_per_line = 80,
 }
 logger.mode = M { ["description"] = "Log", _VERBOSITY.OFF, _VERBOSITY.ERROR, _VERBOSITY.INFO, _VERBOSITY.DEBUG }
-
--- TODO: try getting from file settings
 logger.mode:set(logger.options.verbosity)
 
 local function sticky_chat_color(s, color_index)
@@ -57,9 +55,17 @@ function logger.info(msg, force)
   end
 end
 
+local function _callsite(skip)
+  local info = debug.getinfo(2 + (skip or 0), "nSl")
+  if not info then return "<unknown>", "?:0", "?", "?" end
+  local name = info.name or "<anon>"
+  local where = ("%s:%d"):format(info.short_src or "?", info.currentline or 0)
+  return name, where, info.namewhat or "?", info.what or "?"
+end
 function logger.debug(msg)
   if _verbosity_level[logger.mode.current] >= _verbosity_level[_VERBOSITY.DEBUG] then
-    format_message(_verbosity_display[_VERBOSITY.DEBUG], msg, 161)
+    local name, where = _callsite(1)
+    format_message(_verbosity_display[_VERBOSITY.DEBUG], name .. ": ".. msg, 161)
   end
 end
 
@@ -72,7 +78,6 @@ function logger.error(msg)
   end
 end
 
--- Pretty-print any Lua value and log via autoloader.logger.debug
 function logger.dump(obj, opts, _seen, _depth)
   opts   = opts or {}
   local max_depth = opts.depth or 4       -- nesting limit
@@ -123,6 +128,5 @@ function logger.dump(obj, opts, _seen, _depth)
     logger.debug(line)
   end
 end
-
 
 return logger

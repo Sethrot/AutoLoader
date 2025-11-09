@@ -24,9 +24,6 @@ codex.CORE_SETS = {
         default = "ranged",
         acc = "ranged.acc"
     },
-    fastcast = {
-        default = "fastcast"
-    },
     weaponskill = {
         default = "weaponskill"
     },
@@ -35,7 +32,7 @@ codex.CORE_SETS = {
         mp = "resting.mp"
     },
     precast = {
-        default = "precast"
+        fastcast = "fastcast"
     }
 }
 
@@ -1054,16 +1051,12 @@ end
 -- =========================
 -- FAST CAST / PRECAST
 -- =========================
-local function calc_fastcast_default(s)
+local function calc_precast_fastcast(s)
     -- Fast Cast (spells): cast time reduction (cap ~80%)
     local cap = codex.STAT_CAP or {}
     local fc_cap = cap.fast_cast or 80
     local fc = math.min(s[codex.STAT.fast_cast] or 0, fc_cap)
     return fc * 100
-end
-
-local function calc_precast_default(s)
-    return 0
 end
 
 -- =========================
@@ -1304,8 +1297,7 @@ codex.SET_FUNCTIONS = {
     [codex.CORE_SETS.resting.hp]               = calc_resting_hp,
     [codex.CORE_SETS.resting.mp]               = calc_resting_mp,
 
-    [codex.CORE_SETS.precast.default]          = calc_precast_default,
-    [codex.CORE_SETS.fastcast.default]         = calc_fastcast_default,
+    [codex.CORE_SETS.precast.fastcast]         = calc_precast_fastcast,
     [codex.CORE_SETS.weaponskill.default]      = calc_weaponskill_default,
 
     [codex.CASTING_SETS.healing.default]       = calc_healing_default,

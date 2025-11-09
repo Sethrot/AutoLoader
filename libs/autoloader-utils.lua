@@ -2,40 +2,17 @@ require("lists")
 
 local utils = {}
 
-
-local _mode_display_names = {
-  ["default"] = "Default",
-  ["dt"] = "DT",
-  ["mdt"] = "MDT",
-  ["acc"] = "ACC",
-  ["macc"] = "MACC",
-  ["mb"] = "MB",
-  ["on"] = "On",
-  ["off"] = "Off"
-}
-
-function utils.pretty_mode_value(value)
-  return _mode_display_names[value] or value
-end
-
-function utils.pretty_weapon_name(weapon)
-  if weapon then
-    return ("%s(%s)"):format((weapon.display_name and weapon.display_name .. " ") or "", weapon.id)
-  else
-    return "(0)"
-  end
-end
-
 function utils.call_hook(name, stub, ...)
   local fn = rawget(_G, name)
   if type(fn) == "function" and fn ~= stub then
     local ok, result = pcall(fn, ...)
     if not ok then
-      autoloader.error("Hook '" .. name .. "' failed: " .. tostring(result))
+      autoloader.logger.error("Hook '" .. name .. "' failed: " .. tostring(result))
       return nil, result
     end
     return result
   end
+
   return nil
 end
 
@@ -59,6 +36,9 @@ function utils.split3_by_dot(s)
   return s,nil,nil
 end
 
+function utils.split_args(cmd)
+    return cmd:match("^%s*(%S+)%s*(.*)$")
+end
 
 function utils.escape_lua_pattern(s)
   return (tostring(s or ""):gsub("(%W)", "%%%1"))
@@ -140,7 +120,6 @@ function utils.get_directory_name(path)
   return path:match("^(.*)/[^/]+$") or "."
 end
 
--- Normalize to Windower style
 function utils.normalize_path(p)
   p = tostring(p or ""):gsub("[\r\n\t]", "")
   p = p:gsub("\\", "/"):gsub("/+", "/")
@@ -160,11 +139,6 @@ function utils.remove_file(path)
   end
 end
 
-----------------------------------------------------------------
--- Lightweight async wait: wait_for_file(path[, timeout_s[, period_s]],
---                                       on_ready[, on_timeout])
--- Defaults: timeout=1.0s, period=0.20s
-----------------------------------------------------------------
 function utils.wait_for_file(path, timeout_s, period_s, on_ready, on_timeout)
   path      = tostring(path or '')
   timeout_s = tonumber(timeout_s) or 3.0
@@ -190,7 +164,6 @@ function utils.wait_for_file(path, timeout_s, period_s, on_ready, on_timeout)
 
   step() -- kick off
 end
-
 
 function utils.move_file(src, dst)
   utils.ensure_dir(utils.get_directory_name(dst))
@@ -277,6 +250,40 @@ function utils.ascii_only(s)
   s = tostring(s or ""):gsub("[\r\n]", " ")
   s = s:gsub("[%z\1-\8\11\12\14-\31]", "")
   return s
+end
+
+function utils.print_help_topic(topic)
+    if not topic then return end
+
+    print(topic.title .. " — " .. (topic.desc or ""))
+    if topic.usage and #topic.usage > 0 then
+        print("Usage:"); for i = 1, #topic.usage do print(topic.usage[i]) end
+    end
+    if topic.params and #topic.params > 0 then
+        print("Params:"); for i = 1, #topic.params do print(topic.params[i]) end
+    end
+    if topic.examples and #topic.examples > 0 then
+        print("Examples:"); for i = 1, #topic.examples do print(topic.examples[i]) end
+    end
+    if topic.dynamic then
+        local ok, dyn = pcall(topic.dynamic); if ok and dyn and dyn ~= "" then print(dyn) end
+    end
+end
+
+function utils.sanitize(name)
+    return (tostring(name or ""):gsub("'", ""):gsub("%s+", "_"):lower())
+end
+
+local function get_sanitized_name_parts(name)
+    return utils.split3_by_dot(utils.sanitize(name))
+end
+function utils.sanitize_set_name(name)
+    if not name then return nil, "Name is required." end
+
+    local p1, p2, p3 = get_sanitized_name_parts(name)
+    if not p1 then return nil, "Invalid name: " .. name end
+
+    return utils.sanitize(name), nil
 end
 
 return utils
