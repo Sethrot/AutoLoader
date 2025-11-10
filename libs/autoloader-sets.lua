@@ -1191,7 +1191,7 @@ function sets.handle_sets_command(cmd)
     end
     equip(sets.naked)
     equip(set)
-    log.debug("Equipped set " .. a2)
+    log.debug("Loaded set " .. a2)
   elseif a1 == "delete" then
     local result, err = sets.delete(a2)
     if result then
