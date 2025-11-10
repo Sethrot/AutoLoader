@@ -33,6 +33,9 @@ codex.CORE_SETS = {
     },
     precast = {
         fastcast = "fastcast"
+    },
+    movement = {
+        default = "movement"
     }
 }
 
@@ -127,7 +130,7 @@ codex.STAT = {
     magic_accuracy         = "Magic Accuracy",
     magic_atk_bonus        = "Magic Atk. Bonus",
     magic_damage           = "Magic Damage",
-    ws_accuracy            = "ws_accuracy",
+    ws_accuracy            = "Weapon skill Accuracy",
 
     -- Tempo / TP engine
     haste                  = "Haste",
@@ -192,6 +195,8 @@ codex.STAT = {
     shield_skill           = "Shield skill",
     parrying_skill         = "Parrying skill",
     guarding_skill         = "Guarding skill",
+    martial_arts           = "Martial Arts",
+    evasion_skill          = "Evasion Skill",
 
     -- Skills (magic/perform)
     enhancing_skill        = "Enhancing magic skill",
@@ -358,6 +363,7 @@ codex.STAT_ALIASES = {
     [codex.STAT.shield_skill]           = { "Shield skill" },
     [codex.STAT.parrying_skill]         = { "Parrying skill" },
     [codex.STAT.guarding_skill]         = { "Guarding skill" },
+    [codex.STAT.evasion]                = { "Evasion Skill" },
 
     -- Skills (magic/perform)
     [codex.STAT.enhancing_skill]        = { "Enhancing magic skill" },
@@ -502,29 +508,29 @@ codex.PET_PREFIXES = { "Pet:", "Pet", "Avatar", "Wyvern", "Automaton", "Luopan" 
 -- Credit checkparam
 -- https://github.com/Icydeath/ffxi-addons/blob/master/checkparam
 codex.KNOWN_ENHANCED_BY_ID = {
-    [10392] = { cursna = 10 },        -- Malison Medallion
-    [10393] = { cursna = 15 },        -- Debilis Medallion
-    [10394] = { fast_cast = 5 },      -- Orunmila's Torque
-    [10752] = { fast_cast = 2 },      -- Prolix Ring
-    [11037] = { stoneskin = 10 },     -- Earthcry Earring
-    [11602] = { martial_arts = 10 },  -- Cirque Necklace
-    [11603] = { dual_wield = 3 },     -- Charis Necklace
-    [11732] = { dual_wield = 5 },     -- Nusku's Sash
-    [14739] = { dual_wield = 5 },     -- Suppanomimi
-    [14813] = { da = 5 },             -- Brutal Earring
-    [15962] = { mb_dmg = 5 },         -- Static Earring
-    [16209] = { snapshot = 5 },       -- Navarch's Mantle
-    [19062] = { divine_benison = 1 }, -- Yagrush80
-    [19082] = { divine_benison = 2 }, -- Yagrush85
-    [19614] = { divine_benison = 3 }, -- Yagrush90
-    [19821] = { divine_benison = 3 }, -- Yagrush99
-    [21062] = { divine_benison = 3 }, -- Yagrush119
-    [21063] = { divine_benison = 3 }, -- Yagrush119+
-    [21078] = { divine_benison = 3 }, -- Yagrush119AG
-    [27279] = { pdt = -6 },           -- Eri. Leg Guards
-    [27280] = { pdt = -7 },           -- Eri. Leg Guards +1
-    [28197] = { snapshot = 9 },       -- Nahtirah Trousers
-    [28637] = { fast_cast = 7 },      -- Lifestream Cape
+    [10392] = { [codex.STAT.cursna] = 10 },        -- Malison Medallion
+    [10393] = { [codex.STAT.cursna]  = 15 },        -- Debilis Medallion
+    [10394] = { [codex.STAT.fast_cast] = 5 },      -- Orunmila's Torque
+    [10752] = { [codex.STAT.fast_cast] = 2 },      -- Prolix Ring
+    [11037] = { [codex.STAT.stoneskin] = 10 },     -- Earthcry Earring
+    [11602] = { [codex.STAT.martial_arts] = 10 },  -- Cirque Necklace
+    [11603] = { [codex.STAT.dual_wield] = 3 },     -- Charis Necklace
+    [11732] = { [codex.STAT.dual_wield] = 5 },     -- Nusku's Sash
+    [14739] = { [codex.STAT.dual_wield] = 5 },     -- Suppanomimi
+    [14813] = { [codex.STAT.da] = 5 },             -- Brutal Earring
+    [15962] = { [codex.STAT.mb_dmg] = 5 },         -- Static Earring
+    [16209] = { [codex.STAT.snapshot] = 5 },       -- Navarch's Mantle
+    [19062] = { [codex.STAT.divine_benison] = 1 }, -- Yagrush80
+    [19082] = { [codex.STAT.divine_benison] = 2 }, -- Yagrush85
+    [19614] = { [codex.STAT.divine_benison] = 3 }, -- Yagrush90
+    [19821] = { [codex.STAT.divine_benison] = 3 }, -- Yagrush99
+    [21062] = { [codex.STAT.divine_benison] = 3 }, -- Yagrush119
+    [21063] = { [codex.STAT.divine_benison] = 3 }, -- Yagrush119+
+    [21078] = { [codex.STAT.divine_benison] = 3 }, -- Yagrush119AG
+    [27279] = { [codex.STAT.pdt] = 6 },           -- Eri. Leg Guards
+    [27280] = { [codex.STAT.pdt] = 7 },           -- Eri. Leg Guards +1
+    [28197] = { [codex.STAT.snapshot] = 9 },       -- Nahtirah Trousers
+    [28637] = { [codex.STAT.fast_cast] = 7 },      -- Lifestream Cape
     -- ...add the rest of your list here as you encounter them.
 }
 
@@ -732,18 +738,17 @@ codex.STAT_CAP = {
 }
 
 codex.INVERTED_STATS = {
-    dt                = true,
-    pdt               = true,
-    mdt               = true,
-    breath_dt         = true,
+    [codex.STAT.dt]                = true,
+    [codex.STAT.pdt]               = true,
+    [codex.STAT.mdt]               = true,
+    [codex.STAT.breath_dt]         = true,
 
-    pet_dt            = true,
-    pet_pdt           = true,
-    pet_mdt           = true,
+    [codex.STAT.pet_dt]            = true,
+    [codex.STAT.pet_pdt]           = true,
+    [codex.STAT.pet_mdt]           = true,
 
-    delay             = true,
-    spellcasting_time = true,
-    recast_time       = true,
+    [codex.STAT.delay]             = true,
+    [codex.STAT.fast_cast]         = true, -- For cast time reductions
 }
 
 codex.ENHANCEMENT_VERBS = {
@@ -1079,9 +1084,6 @@ local function calc_healing_weather(s)
         (s[codex.STAT.mnd] or 0) * 0.5
 end
 
--- =========================
--- IDLE
--- =========================
 local function calc_idle_default(s)
     -- Idle: Refresh >> Regen > Regain
     return
@@ -1127,9 +1129,6 @@ local function calc_idle_refresh(s)
     return (s[codex.STAT.refresh] or 0) * 1000
 end
 
--- =========================
--- MAGIC (generic)
--- =========================
 local function calc_magic_default(s)
     -- Nuking baseline
     return
@@ -1154,9 +1153,6 @@ local function calc_magic_mb(s)
     return (mb1 * 100) + (mb2 * 200)
 end
 
--- =========================
--- MELEE
--- =========================
 local function calc_melee_acc(s)
     -- Accuracy leaning
     return
@@ -1172,9 +1168,9 @@ local function calc_melee_default(s)
         (s[codex.STAT.attack] or 0) * 1.0 +
         (s[codex.STAT.accuracy] or 0) * 1.2 +
         h * 40 +
-        (s[codex.STAT.da] or 0) * 20 +
-        (s[codex.STAT.ta] or 0) * 30 +
-        (s[codex.STAT.qa] or 0) * 40 +
+        (s[codex.STAT.da] or 0) * 100 +
+        (s[codex.STAT.ta] or 0) * 150 +
+        (s[codex.STAT.qa] or 0) * 200 +
         (s[codex.STAT.store_tp] or 0) * 5 +
         (s[codex.STAT.save_tp] or 0) * 3 +
         (s[codex.STAT.str] or 0) * 0.6 +
@@ -1229,9 +1225,6 @@ local function calc_melee_sb(s)
         (s[codex.STAT.subtle_blow_ii] or 0) * 100
 end
 
--- =========================
--- RANGED
--- =========================
 local function calc_ranged_acc(s)
     -- Accuracy‐leaning ranged
     return
@@ -1248,9 +1241,6 @@ local function calc_ranged_default(s)
         (s[codex.STAT.agi] or 0) * 0.4
 end
 
--- =========================
--- RESTING
--- =========================
 local function calc_resting_hp(s)
     -- HP recovered while healing
     return (s[codex.STAT.hp_while_healing] or 0)
@@ -1263,16 +1253,12 @@ local function calc_resting_mp(s)
         (s[codex.STAT.hp_while_healing] or 0) * 0.15
 end
 
--- =========================
--- WEAPONSKILL (generic)
--- =========================
 local function calc_weaponskill_default(s)
     -- Gear‐agnostic WS emphasis: WS Damage and Skillchain Bonus
     return
         (s[codex.STAT.ws_dmg] or 0) * 100 +
         (s[codex.STAT.sc_dmg] or 0) * 50
 end
-
 
 codex.SET_FUNCTIONS = {
     [codex.CORE_SETS.idle.default]             = calc_idle_default,

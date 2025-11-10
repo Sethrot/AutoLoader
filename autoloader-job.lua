@@ -1,19 +1,25 @@
 local job = {}
-_G.job    = job
 
 require("Modes")
 require("lists")
+local res = require("resources")
+
 local utils               = require("autoloader-utils")
 local sets                = require("autoloader-sets")
-local scanner             = require("autoloader-scanner")
 local codex               = require("autoloader-codex")
 local log                 = require("autoloader-logger")
 
-job.default_weapon_id     = 1
-job.lockstyle             = nil
-job.auto_echo_drops       = false
-job.auto_remedy           = false
-job.idle_refresh          = nil
+job.default_weapon_id         = 1
+job.lockstyle                 = nil
+job.auto_echo_drops           = false
+job.auto_remedy               = false
+job.idle_refresh              = nil
+job.auto_movement             = false
+job.idle_mode                 = "default"
+job.melee_mode                = "default"
+job.magic_mode                = "default"
+job.use_auto_sets             = true
+job.auto_sets_refresh_minutes = 1440
 
 local _idle_mode          = M { ["description"] = "Idle", "default", "dt", "mdt" }
 local _melee_mode         = M { ["description"] = "Melee", "default", "acc", "dt", "mdt", "sb", "off" }
@@ -23,8 +29,7 @@ local _auto_movement_mode = M { ["description"] = "Movement", "off", "on" }
 local _weapons            = {}
 local _current_weapon_id  = job.default_weapon_id
 local _keybinds           = {}
-local _lockstyle          = nil
-local _auto_movement      = false
+
 
 local _mode_display_names = {
     ["default"] = "Default",
@@ -73,8 +78,34 @@ local function try_set_mode(mode, value)
     return true, nil
 end
 
-local _lastX, _lastY = nil, nil
+local moving = false
+local _last_move_check, _last_x, _last_y = nil, nil, nil
 local function movement_poll(now)
+    if not player then _last_move_check = nil return end
+    if not _last_move_check then
+        _last_move_check = now
+        _last_x, _last_y = player.x, player.y
+        return
+    end
+    if now - _last_move_check > 1 then
+        _last_move_check = now
+
+        local me = windower.ffxi.get_mob_by_index(player.index)
+        if not me then _last_move_check = nil return end
+        
+        local player_x, player_y = me.x, me.y
+        if player.status and player.status:lower() == "idle" then
+            if (player_x ~= _last_x or player_y ~= _last_y) and not moving then
+                moving = true
+                equip(sets.get(codex.CORE_SETS.movement.default))
+            elseif player_x == _last_x and player_y == _last_y and moving then
+                moving = false
+                job.status_refresh()
+            end
+        end
+
+        _last_x, _last_y = player_x, player_y
+    end
 end
 
 local _polling_functions = {
@@ -87,21 +118,27 @@ local _polling_functions = {
 
 local poll = {}
 do
-    local tasks   = {} -- key -> {fn=function(now), interval=number, next_due=number}
+    local tasks   = {}
     local running = false
-    local handler = nil
+    local ev_id   = nil
+
+    local function trace(err)
+        return (debug and debug.traceback) and debug.traceback("Task error: " .. tostring(err), 2)
+               or ("Task error: " .. tostring(err))
+    end
 
     local function detach_if_empty()
         if next(tasks) ~= nil then return end
-        if running and windower and windower.unregister_event and handler then
-            pcall(windower.unregister_event, 'prerender', handler)
-            handler, running = nil, false
+        if running and ev_id and windower and windower.unregister_event then
+            windower.unregister_event(ev_id)
+            ev_id, running = nil, false
         end
     end
 
     local function ensure_handler()
         if running then return end
-        handler = function()
+
+        local function handler()
             -- nothing scheduled → detach if we can, otherwise cheap return
             if next(tasks) == nil then
                 detach_if_empty()
@@ -109,6 +146,7 @@ do
             end
 
             local now = os.clock()
+
             -- collect due keys first (safe against registry mutations during callbacks)
             local due = {}
             for k, t in pairs(tasks) do
@@ -122,9 +160,12 @@ do
                 local k = due[i]
                 local t = tasks[k]
                 if t then
-                    local ok = xpcall(t.fn, debug.traceback, now)
+                    local ok, err = pcall(t.fn, now)
                     -- even on error, schedule next tick (keeps the loop alive but won’t crash)
                     t.next_due = now + t.interval
+                    if not ok and log and log.error then
+                        log.error(trace(err))
+                    end
                 end
             end
 
@@ -132,7 +173,7 @@ do
             detach_if_empty()
         end
 
-        windower.register_event('prerender', handler)
+        ev_id = windower.register_event('prerender', handler)
         running = true
     end
 
@@ -141,8 +182,8 @@ do
     -- @param interval  number         (seconds, e.g. 0.5 or 1.0)
     -- @param fn        function(now)  (now = os.clock())
     function poll.ensure_registration(key, interval, fn)
-        assert(key ~= nil, 'poll.register_once: key required')
-        assert(type(fn) == 'function', 'poll.register_once: fn must be function')
+        assert(key ~= nil, 'poll.ensure_registration: key required')
+        assert(type(fn) == 'function', 'poll.ensure_registration: fn must be function')
         if tasks[key] then return false end
         tasks[key] = { fn = fn, interval = tonumber(interval) or 1.0, next_due = os.clock() }
         ensure_handler()
@@ -156,7 +197,7 @@ do
         detach_if_empty()
     end
 
-    --- Remove all jobs and stop the handler (if supported).
+    --- Remove all jobs and stop the handler.
     function poll.clear()
         for k in pairs(tasks) do tasks[k] = nil end
         detach_if_empty()
@@ -169,18 +210,20 @@ do
 end
 job.poll = poll
 
+
 local function update_movement_polling()
-    local movement_poll = _polling_functions.movement
-    if movement_poll then
-        if _auto_movement_mode.current then
-            log.debug("Ensuring resgistration for  " .. movement_poll.key)
-            job.poll.ensure_registration(movement_poll.key, movement_poll.interval, movement_poll.fn)
-        else
-            job.poll.unregister(movement_poll.key)
-            log.debug("Unregistered " .. movement_poll.key)
-        end
+    local movement_poll_def = _polling_functions.movement
+    if not movement_poll_def then return end
+
+    if _auto_movement_mode.current == "on" then
+        log.debug("Ensuring registration for " .. movement_poll_def.key)
+        job.poll.ensure_registration(movement_poll_def.key, movement_poll_def.interval, movement_poll_def.fn)
+    else
+        job.poll.unregister(movement_poll_def.key)
+        log.debug("Unregistered " .. movement_poll_def.key)
     end
 end
+
 function job.set_movement_mode(value)
     local ok, err = try_set_mode(_auto_movement_mode, value)
     if not ok then
@@ -201,8 +244,8 @@ function job.set_idle_mode(value)
     if not ok then
         log.error(err); return
     end
-    echo("Idle: " .. utils.pretty_mode_value(job.get_current_idle_mode()))
-    job.update_equip()
+    if announce then echo("Idle: " .. utils.pretty_mode_value(job.get_current_idle_mode())) end
+    job.status_refresh()
 end
 
 local function cycle_idle_mode()
@@ -220,8 +263,8 @@ function job.set_melee_mode(value)
     if not ok then
         log.error(err); return
     end
-    echo("Melee: " .. utils.pretty_mode_value(job.get_current_melee_mode()))
-    job.update_equip()
+    if announce then echo("Melee: " .. utils.pretty_mode_value(job.get_current_melee_mode())) end
+    job.status_refresh()
 end
 
 local function cycle_melee_mode()
@@ -236,8 +279,8 @@ end
 function job.set_magic_mode(value)
     local ok, err = try_set_mode(_magic_mode, value)
     if not ok then log.error(err) end
-    echo("Magic: " .. utils.pretty_mode_value(job.get_current_magic_mode()))
-    job.update_equip()
+    if announce then echo("Magic: " .. utils.pretty_mode_value(job.get_current_magic_mode())) end
+    job.status_refresh()
 end
 
 local function cycle_magic_mode()
@@ -267,7 +310,7 @@ function job.get_spell_id(name)
     local s = res.spells:with('en', name); return s and s.id or nil
 end
 
-function job.select_weapon(id, announce)
+function job.set_weapon(id, announce)
     _weapons = sets.get_weapons()
     id = tonumber(id)
     if not id then
@@ -285,12 +328,12 @@ function job.select_weapon(id, announce)
     elseif id == job.default_weapon_id then
         -- The default isn't present, fallback to .weapon0
         _current_weapon_id = 0
-        if refresh then job.update_equip() end
+        job.status_refresh()
         if announce then echo("Weapon: None") end
         return true, nil
     elseif id == 0 then
         _current_weapon_id = 0
-        if refresh then job.update_equip() end
+        job.status_refresh()
         if announce then echo("Weapon: None") end
         return true, nil
     else
@@ -350,7 +393,7 @@ local function cycle_weapon()
     local next_id = ids[next_index]
     if next_id then
         -- Second arg = announce; your set_weapon signature expects that
-        job.set_weapon(next_id, true, true)
+        job.set_weapon(next_id, true)
     end
 end
 local function add_weapon(id, name)
@@ -445,11 +488,66 @@ local function player_should_refresh_idle()
     end
 end
 
-local function player_is_dw()
-    local sub_weapon = player.equipment.sub
-    if not sub_weapon then return false end
+-- Helper: fetch the res.items entry for a player.equipment.* table
+local function resolve_item(entry)
+    if type(entry) ~= 'table' then return nil end
+    local name = tostring(entry.name or ''):gsub('^%s+', ''):gsub('%s+$', '')
+    if name == '' or name:lower() == 'empty' then return nil end
 
-    -- TODO: can sub_weapon be equipped to main?
+    -- Prefer id when present
+    if entry.id and res.items[entry.id] then
+        return res.items[entry.id]
+    end
+
+    -- Fallback by English name fields used in resources
+    return res.items:with('en', name) or res.items:with('enl', name) or nil
+end
+
+local function player_is_dw()
+    if type(player) ~= 'table' or type(player.equipment) ~= 'table' then
+        return false
+    end
+
+    local sub_entry = player.equipment.sub
+    if not sub_entry then return false end
+
+    local item = resolve_item(sub_entry)
+    if not item then return false end
+
+    if type(item) ~= 'table' then return false end
+    local slots = item.slots
+    if type(slots) ~= 'table' then return false end
+
+    -- Optional hard exclusion: if resources expose skill, exclude known shield skill
+    if item.skill and res.skills then
+        for sid, sk in pairs(res.skills) do
+            local nm = (sk.en or sk.english or sk.name)
+            if nm == 'Shield' and item.skill == sid then
+                return false
+            end
+        end
+    end
+
+
+    -- Case 1: string-keyed slots table
+    if slots.Main or slots.main then return true end
+
+    -- Case 2: id-keyed slots table; find which id corresponds to "Main"
+    if res.slots then
+        local main_id
+        for sid, sdef in pairs(res.slots) do
+            local name = (sdef.en or sdef.english or sdef.name) or ""
+            if name:lower() == 'main' then main_id = sid; break end
+        end
+        if main_id and slots[main_id] then return true end
+    end
+
+    -- Secondary, robust fallback: weapons have non-zero damage; shields/grips do not
+    if type(item.damage) == 'number' and item.damage > 0 then
+        return true
+    end
+
+    return false
 end
 
 local function get_ordered_mode_set_names(mode)
@@ -567,15 +665,23 @@ function get_sets()
     local terminate = utils.call_hook("before_get_sets", job.stub_before_get_sets)
     if terminate then return end
 
-     if next(_keybinds) ~= nil then
+    try_set_mode(_auto_movement_mode, job.auto_movement)
+    update_movement_polling()
+
+    try_set_mode(_idle_mode, job.idle_mode)
+    try_set_mode(_melee_mode, job.melee_mode)
+    try_set_mode(_magic_mode, job.magic_mode)
+   
+    if next(_keybinds) ~= nil then
         for key, bind in pairs(_keybinds) do
             local ok = pcall(function() windower.send_command(("bind %s %s"):format(key, bind)) end)
             if not ok then log.error(("Failed to bind %s => %s"):format(key, bind)) end
         end
     end
-
-    scanner.generate_auto_sets()
-    log.debug("Generated auto sets.")
+    
+    if job.use_auto_sets then
+        sets.generate_auto_sets(0.05, 32, 0.1)
+    end
 
     _weapons = sets.get_weapons()
     log.debug("Loaded weapons.")
@@ -716,7 +822,7 @@ local function handle_weapon_command(cmd)
         local ok, err = delete_weapon(a2)
         if ok == false then log.error(err) end
     elseif a1 == "select" then
-        local ok, err = job.select_weapon(a2, true)
+        local ok, err = job.set_weapon(a2, true)
         if not ok then log.error(err) end
     elseif a1 == "next" then
         cycle_weapon()
@@ -725,7 +831,7 @@ end
 
 local function handle_movement_command(cmd)
     if cmd then
-        job.set_auto_movement(cmd)
+        job.set_movement_mode(cmd, true)
         return
     else
         cycle_movement_mode()
@@ -786,7 +892,7 @@ Topic('movement', {
     usage    = { "movement", "movement <mode>" },
     params   = { "<mode> ::= on | off" },
     examples = { "gs c a movement on", "gs c a movement off" },
-    dynamic  = function() return "Current: " .. utils.pretty_mode_value(tostring(_auto_movement)) end,
+    dynamic  = function() return "Current: " .. utils.pretty_mode_value(_auto_movement_mode.current) end,
 })
 
 Topic('log', {
@@ -861,3 +967,5 @@ function self_command(cmd)
 end
 
 log.debug("autoloader-job ready.")
+
+return job
