@@ -1195,7 +1195,7 @@ function sets.handle_sets_command(cmd)
   elseif a1 == "delete" then
     local result, err = sets.delete(a2)
     if result then
-      log.info("Deleted " .. a1)
+      log.info("Deleted " .. a2)
     else
       log.error(err)
     end
