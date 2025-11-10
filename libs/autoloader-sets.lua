@@ -63,7 +63,7 @@ local function get_job_path()
 end
 
 local function get_auto_path()
-  return utils.join_paths(_root, ("data/autoloader/auto"))
+  return utils.join_paths(get_job_path(), ("auto"))
 end
 
 local function get_job_prefix()
