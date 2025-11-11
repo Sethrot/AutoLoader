@@ -38,7 +38,7 @@ However, the "Optimize Gear" button for FFXI is complicated, and it works about 
 
 To get the most out of this tool you'll want to save at least a few basic sets yourself.
 
-***sets* Management**
+**Sets Management**
    
 The primary reason AutoLoader was created was because I'm a poorly equipped casual and I don't want to edit luas every time I get a new piece of gear.
 
