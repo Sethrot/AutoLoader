@@ -81,15 +81,17 @@ An important part of this tool is *autoloader-codex*, which is meant to (hopeful
 AutoLoader makes heavy use of GearSwap's combine_set to load relevant sets in order of specificity.
 
 Whenever you cast Fire IV, AutoLoader does, in order:
+```
 precast => 
 equip "fastcast" because this is a magic spell*
-
+```
+```
 midcast => 
 equip predefined sets mapped to "fire"
 equip "fire" set (if it exists)
 equip predefined sets mapped to "fire iv"
 equip "fire iv" set (if it exists)
-
+```
 For each of those steps, it also looks for the automatically generated sets if you haven't defined one. 
 There are no automatically defined sets for explicit spells, abilities, or weaponskills - only for the predefined sets.
 Named spells assume midcast, named anything else assumes midcast. (If you do save precast.fire or midcast.savage_blade for whatever reason, it *will* be used for the step you specified.)
