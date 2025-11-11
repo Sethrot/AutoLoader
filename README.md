@@ -35,26 +35,7 @@ However, the "Optimize Gear" button for FFXI is complicated, and it works about 
 
 *If you're a FFXI master tactician, please consider contributing to [libs/autoloader-codex.](https://github.com/NeatMachine/AutoLoader/blob/main/libs/autoloader-codex.lua)*
 
-*SET_FUNCTIONS define the parameters used to calculate the optimal gear for each set. Most of it is AI generated for now.*
-
-These are defined like:
-```lua
-local function calc_melee_default(s)
-    local cap = codex.STAT_CAP or {}
-    local h = math.min(s[codex.STAT.haste] or 0, cap.haste or 25)
-    return
-        (s[codex.STAT.attack] or 0) * 1.0 +
-        (s[codex.STAT.accuracy] or 0) * 1.2 +
-        h * 40 +
-        (s[codex.STAT.da] or 0) * 100 +
-        (s[codex.STAT.ta] or 0) * 150 +
-        (s[codex.STAT.qa] or 0) * 200 +
-        (s[codex.STAT.store_tp] or 0) * 5 +
-        (s[codex.STAT.save_tp] or 0) * 3 +
-        (s[codex.STAT.str] or 0) * 0.6 +
-        (s[codex.STAT.dex] or 0) * 0.5
-end
-```
+*SET_FUNCTIONS define the parameters used to calculate the optimal gear for each set. Most of it is AI generated for now. Check the calc_* functions*
 
 **Sets Management**
    
