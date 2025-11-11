@@ -10,16 +10,16 @@ It lives in `GearSwap/libs` and runs when your job file loads. No separate addon
 1) **Drop the lib files into GearSwap/libs**
 ```
 Windower/addons/GearSwap/libs/
-  autoloader-job.lua
+  autoloader.lua
   autoloader-sets.lua
   autoloader-codex.lua
   autoloader-utils.lua
   autoloader-logger.lua
 ```
 
-2) **Add one require to the top of your job file**
+2) **Add one line to the top of your empty job file**
 ```lua
-local job = require("autoloader-job") 
+include("autoloader") 
 ```
 Check [data/Seloan_DRK.lua](https://github.com/NeatMachine/AutoLoader/blob/main/data/Seloan_DRK.lua) for a minimal job file.
 
@@ -42,7 +42,7 @@ To get the most out of this tool you'll want to save at least a few basic sets y
 The primary reason AutoLoader was created is because I'm a poorly equipped casual and I don't want to edit luas every time I get a new piece of gear.
 
 Leveraging GearSwap's export command, we allow you to manage (save/update/view/delete) named sets using the *//gs c auto sets* command. 
-Right below are some of the most important ones if you choose to let the *autoloader-jobs* library manage your states for you.
+Right below are some of the most important ones if you choose to let the *autoloader* library manage your states for you.
 ```
 //gs c auto sets save idle
 //gs c auto sets save melee
@@ -62,7 +62,7 @@ But we'll talk about how it works in more detail below.
 ## Advanced
 **Keep your lua and just use *sets***
 
-The *autoloader-sets* library will give you the set mangement functionality independently of *autoloader-job*, so you can use it with Mote or whatever else.
+The *autoloader-sets* library will give you the set mangement functionality independently of *autoloader*, so you can use it with Mote or whatever else.
 An example of that would be:
 ```
 local autosets = require("autoloader-sets")
@@ -74,9 +74,9 @@ get_sets()
 end
 ```
 
-***autoloader-job* details**
+***autoloader* details**
 
-An important part of this tool is *autoloader-codex*, which is meant to (hopefully) be contributed to by people more knowledgeable than I am. Codex describes stats, spells, sets, etc. and helps to drive *autoloader-job* decisions.
+An important part of this tool is *autoloader-codex*, which is meant to (hopefully) be contributed to by people more knowledgeable than I am. Codex describes stats, spells, sets, etc. and helps to drive *autoloader* decisions.
 
 AutoLoader makes heavy use of GearSwap's combine_set to load relevant sets in order of specificity.
 
