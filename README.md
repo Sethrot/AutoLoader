@@ -74,8 +74,7 @@ end
 
 ***autoloader-job* details**
 
-A lot of the brains behind this library live in *autoloader-codex*, which is meant to (hopefully) be contributed to by people more knowledgeable than I am.
-What you'll notice if you look at that file, is that there are many predefined sets for more common scenarios.
+An important part of this tool is *autoloader-codex*, which is meant to (hopefully) be contributed to by people more knowledgeable than I am. Codex describes stats, spells, sets, etc. and helps to drive *autoloader-job* decisions.
 
 AutoLoader makes heavy use of GearSwap's combine_set to load relevant sets in order of specificity.
 
