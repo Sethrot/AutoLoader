@@ -7,9 +7,7 @@ It lives in `GearSwap/libs` and runs when your job file loads. No separate addon
 
 ## Quick Start
 
-1) **Install**
-
-Drop the lib files into GearSwap/libs
+1) **Drop the lib files into GearSwap/libs**
 ```
 Windower/addons/GearSwap/libs/
   autoloader-job.lua
