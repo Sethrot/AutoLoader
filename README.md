@@ -33,6 +33,7 @@ This is an "Optimize Gear" button for FFXI, and it works for various situations 
 However, the "Optimize Gear" button for FFXI is complicated, and it works about as well as you'd expect.
 
 *If you're a FFXI master tactician, please consider contributing to [libs/autoloader-codex.](https://github.com/NeatMachine/AutoLoader/blob/dev/data/Seloan_DRK.lua)*
+
 *SET_FUNCTIONS define the parameters used to calculate the optimal gear for each set. Most of it is AI generated for now.*
 
 To get the most out of this tool you'll want to save at least a few basic sets yourself.
