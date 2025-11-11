@@ -1,92 +1,97 @@
-# AutoLoader (for GearSwap/libs)
+# AutoLoader (for GearSwap)
 
 AutoLoader builds **plain GearSwap sets from the gear you already own** and equips them automatically.  
-It lives in `GearSwap/libs` and runs when your job file loads. No separate addon to load.
+It lives in `GearSwap/libs` and runs when your job file loads. No separate addon needed.
 
 ---
 
 ## Quick Start
 
 1) **Install**
+
+Drop the lib files into GearSwap/libs
 ```
-Drop the lib files into GearSwap/libs => 
 Windower/addons/GearSwap/libs/
+  autoloader-job.lua
+  autoloader-sets.lua
+  autoloader-codex.lua
+  autoloader-utils.lua
+  autoloader-logger.lua
+```
 
-2) **require("autoloader-job") in your job file** (e.g. `Windower/addons/GearSwap/data/Char_JOB.lua`)
+2) **Add one require to the top of your job file**
 ```lua
--- minimal job file
-Check data/Seloan_DRK.lua
+-- minimal job file, ex: GearSwap/data/Seloan_DRK.lua
+require("autoloader-job") 
+```
+Check data/Seloan_DRK.lua for a minimal job file.
+
+
+## What it does
+1) **Auto-generated Sets**
+Whenever you change jobs, AutoLoader will immediately **scan your gear and generate baseline sets** (saved in data/jobs/drk/auto)
+This is an "Optimize Gear" button for FFXI, and it works for various situations like idle, melee/engaged, fastcast for casting, etc.
+However, the "Optimize Gear" button for FFXI is complicated, and it works about as well as you'd expect.
+*If you're a FFXI master tactician, please consider contributing to libs/autoloader-codex.*
+*SET_FUNCTIONS define the parameters used to calculate the optimal gear for each set. Most of it is AI generated for now.*
+
+To get the most out of this tool you'll want to save at least a few basic sets yourself.
+
+2) ***sets* Management**
+The primary reason AutoLoader was created was because I still need a lot of gear and I don't want to edit my luas every time I get a new piece of equipment.
+
+Leveraging GearSwap's export command, we allow you to manage (save/update/view/delete) named sets using the *//gs c auto sets* command. 
+These are some of the important ones if you choose to let the *autoloader-jobs* library manage your states for you.
+```
+//gs c auto sets save idle
+//gs c auto sets save melee
+//gs c auto sets save fastcast
+//gs c auto sets save ws
+//gs c auto sets save <magic school> (elemental | enhancing | enfeebling | etc)
 ```
 
-3) **Load your job in-game**  
-AutoLoader will immediately **scan your gear and generate baseline sets** (no commands needed).
-
-That’s enough for basic use.
-
----
-
-## What it creates (automatically)
-
-On load, AutoLoader writes fallback sets (based on your inventory) to:
+You can also save a set for any ability or spell by name, and *autoloader-jobs* will use it automatically (precast for abilities, midcast for spells)
 ```
-Windower/addons/GearSwap/data/autoloader/auto/
-<PlayerName>_<job>.<set>.lua
-```
-These are normal GearSwap tables and are used **only if you don’t have a saved set** for that name.
-
----
-
-## Where your saved sets go
-
-When you save a set, it’s written to:
-```
-Windower/addons/GearSwap/data/autoloader/jobs/<job>/
-<PlayerName>_<job>.<set>.lua
-```
-Saved sets *always* take priority over the auto-generated ones.
-
----
-
-## The one family of commands you’ll use
-
-All user commands are under the **`a` / `auto`** prefix inside GearSwap’s command channel.
-
-**List your sets**
-```
-/gs c a sets list
+//gs c auto sets save savage blade -- set names will be automatically normalized, replacing spaces with '_' and removing apostrophes.
 ```
 
-**Save your current gear to a set**
+## Advanced
+**Keep your lua and just use *sets***
+The *autoloader-sets* library will give you the set maangement functionality independently of *autoloader-job*, so you can use it with Mote or whatever else.
+An example of that would be:
 ```
-/gs c a sets save idle
-/gs c a sets save melee
-/gs c a sets save fastcast
-/gs c a sets save ws
-/gs c a sets save enfeebling
-/gs c a sets save healing
-/gs c a sets save enhancing
-/gs c a sets save elemental
-/gs c a sets save dark
-```
-Set names are sanitized: spaces → `_`, lowercased.  
-Examples: `Vorpal Scythe` → `vorpal_scythe`, `Utsusemi: Ni` → `utsusemi:_ni` (you typically save family/base names instead of per-rank).
+autosets = require("autoloader-sets")
 
-**Try/preview a set over current gear**
-```
-/gs c a sets equip idle
+get_sets()
+   -- Whatever else you're doing in your luas. I'm still new to this.
+
+   sets.best.gear = autosets.get("sets.best.gear") -- or whatever else you want to call it when you save
+end
 ```
 
-**Load a set cleanly (clears body slots first, then applies)**
-```
-/gs c a sets load melee
-```
+***autoloader-job* details**
+A lot of the brains behind this library live in *autoloader-codex*, which is meant to (hopefully) be contributed to by people more knowledgeable than I am.
+What you'll notice if you look at that file, is that there are many predefined sets for more common scenarios.
 
-**Delete a set**
-```
-/gs c a sets delete elemental
-```
+AutoLoader makes heavy use of GearSwap's combine_set to load relevant sets in order of specificity.
 
-**Help**
+Whenever you cast Fire IV, AutoLoader does, in order:
+precast => 
+equip "fastcast" because this is a magic spell*
+
+midcast => 
+equip predefined sets mapped to "fire"
+equip "fire" set (if it exists)
+equip predefined sets mapped to "fire iv"
+equip "fire iv" set (if it exists)
+
+For each of those steps, it also looks for the automatically generated sets if you haven't defined one. 
+There are no automatically defined sets for explicit spells, abilities, or weaponskills - only for the predefined sets.
+Named spells assume midcast, named anything else assumes midcast. (If you do save precast.fire or midcast.savage_blade for whatever reason, it *will* be used for the step you specified.)
+
+
+
+## Help
 ```
 /gs c a help
 /gs c a help sets
@@ -94,104 +99,20 @@ Examples: `Vorpal Scythe` → `vorpal_scythe`, `Utsusemi: Ni` → `utsusemi:_ni`
 
 ---
 
-## Which sets should you create first?
-
-Create these five and you’ll cover most gameplay:
-
-1. `idle` – your out-of-combat resting/refresh baseline  
-2. `melee` – your engaged/TP baseline  
-3. `fastcast` – precast for all spells (Fast Cast)  
-4. `ws` – generic weapon skills baseline  
-5. One or two magic families you use most:
-   - `enfeebling`, `healing`, `enhancing`, `elemental`, `dark`
-
-**Notes**
-- Family saves apply broadly. For example, saving `dark` will be used for Drain/Aspir and similar via the resolver.
-- You can get specific later (e.g., `precast.Phalanx`, `midcast.Phalanx`, `Stoneskin`, `Utsusemi`, or variants like `enhancing.duration`).
-
----
-
-## How set resolution works (simple)
-
-When equipping, AutoLoader builds an ordered list of set names from **most specific → more general**, then merges them. It equips the result.
-
-- **Idle/Engaged**  
-  - `melee` when Engaged (plus `melee.dw` if dual-wielding)  
-  - `idle` when not Engaged (plus `idle.refresh` if you need the refresh variant)
-
-- **Precast (magic & WS)**  
-  - Spells: `precast.<Spell>` → `precast.<Base>` → `fastcast` (+ common synonyms)  
-  - Weapon skills: `precast.<WS>` → `ws` (+ common synonyms)
-
-- **Midcast (magic)**  
-  - `midcast.<Spell>` → `<Spell>` → `midcast.<Base>` → `<Base>` → family variants (e.g., `enfeebling`, `healing`, `elemental`, `dark`) → optional mode layers (if you add them later)
-
-- **Weapons (optional overlay)**  
-  If you use weapon IDs later, engaged sets can add `melee.weapon<ID>` layers.
-
-Saved sets under `jobs/<job>/` beat auto sets under `auto/`. If nothing is saved for a name, the auto version is used.
-
----
-
 ## Minimal “works everywhere” job file
-
 ```lua
--- data/SOMEJOB.lua
+-- data/Char_JOB.lua
 local job = require("autoloader-job")  -- AutoLoader: generates + equips core sets
 
 -- Optional QoL:
 -- job.lockstyle = 20
 -- job.auto_echo_drops = true   -- use Echo Drops if silenced before recasting
 -- job.auto_remedy = true       -- use Remedy if paralyzed before recasting
--- job.idle_refresh = 1         -- treat low-MP idle as 'idle.refresh'
+-- job.idle_refresh = true      -- idle state will look for refresh gear (or idle.refresh)
 ```
-
----
-
-## Optional (advanced) commands
-
-**Logger level**
-```
-/gs c a log off|error|info|debug
-```
-
-**Weapons (if you want per-weapon layers)**
-```
-/gs c a weapon save <id> <name>
-/gs c a weapon select <id>
-/gs c a weapon delete <id>
-/gs c a weapon next|prev
-```
-
-*(You can ignore this section at first. Basic play only needs the “sets” commands above.)*
-
----
-
-## Troubleshooting
-
-- **“Nothing changed.”**  
-  You likely haven’t saved that set name yet; AutoLoader is using the auto fallback. Save it:
-  ```
-  /gs c a sets save idle
-  /gs c a sets save melee
-  ```
-- **“How do I see what I’ve saved?”**  
-  ```
-  /gs c a sets list
-  ```
-- **“Where did the files go?”**  
-  - Auto sets (fallback): `data/autoloader/auto/`
-  - Your saved sets (priority): `data/autoloader/jobs/<job>/`
-- **“My WS didn’t use my specific set.”**  
-  Save `ws` for a wide catch-all; add a specific, sanitized WS name if needed, e.g.:
-  ```
-  /gs c a sets save vorpal_scythe
-  ```
-
----
 
 ## Philosophy
 
-- **Plain GearSwap tables.** Everything it generates/saves is just a normal set you can open and edit.
-- **Your edits win.** Anything you save under `jobs/<job>/` overrides auto sets.
-- **Start simple.** Core five sets (idle, melee, fastcast, ws, + one family) carry 90% of play. Add detail later as you like.
+- **Plain GearSwap tables.** Everything it generates/saves is just a normal set you can open and edit. This makes it immediately portable to existing luas.
+- **Your saves win.** Anything you save under `jobs/<job>/` overrides auto sets.
+- **Better than nothing.** Core five sets (idle, melee, fastcast, ws, + one magic family) carry 90% of play. Add detail later as you like.
