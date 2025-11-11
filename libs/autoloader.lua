@@ -143,7 +143,7 @@ do
             local now = utils.now()
             for key, t in pairs(tasks) do
                 if t.next_due <= now then
-                    local ok, err = pcall(t.fn)
+                    local ok, err = pcall(t.fn, now)
                     if not ok then
                         log.error(("Poll '%s' failed: %s"):format(tostring(key), tostring(err)))
                     end
