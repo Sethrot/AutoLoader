@@ -66,9 +66,9 @@ An example of that would be:
 autosets = require("autoloader-sets")
 
 get_sets()
-   -- Whatever else you're doing in your luas. I'm still new to this.
+   -- some other stuff you're doing in your lua
 
-   sets.best.gear = autosets.get("sets.best.gear") -- or whatever else you want to call it when you save
+   sets.best.gear = autosets.get("sets.best.gear") -- or whatever else you want to name it when you save
 end
 ```
 
