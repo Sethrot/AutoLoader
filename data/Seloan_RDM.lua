@@ -14,12 +14,12 @@ function before_precast(spell)
     if not spell or spell.action_type ~= "Magic" or spell.skill ~= "Enhancing Magic" then return end
 
     local composure_recast = autoloader.get_ability_recast("Composure")
-    
+
     -- If Composure not up and it's ready, use it and then re-cast.
     if not buffactive['Composure'] and composure_recast == 0 then
         cancel_spell()
         windower.send_command("input /ja 'Composure' <me>;wait 1.2;input /ma '" .. spell.english .. "' " .. spell.target.name)
-        log.info(("%s (%s) => Composure => %s (%s)"):format(spell.english, spell.target.name, spell.english, spell.target.name))
+        log.info(("%s => Composure => %s"):format(spell.english, spell.english))
         return true -- block original precast
     end
 
@@ -29,7 +29,7 @@ function before_precast(spell)
             -- Downgrade Phalanx II when casting on self
             cancel_spell()
             windower.send_command("input /ma 'Phalanx' " .. spell.target.name)
-            log.info(("Phalanx II (%s) => Phalanx (%s)"):format(spell.target.name, spell.target.name))
+            log.info("Phalanx II (Self) => Phalanx (Self)")
             return true -- block original precast
         end
     end

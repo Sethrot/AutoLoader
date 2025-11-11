@@ -436,7 +436,7 @@ function sets.save_weapon(id, name)
 
   utils.wait_for_file(
     saved_file,
-    0.5, 0.1,
+    0.7, 0.1,
     function(path)
       local w_ok, w_err = write_weapon_display_name(path, display_name)
       if not w_ok then

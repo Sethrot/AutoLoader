@@ -377,15 +377,15 @@ end
 local function add_weapon(id, name)
     local ok, err = sets.save_weapon(id, name)
     if ok then
-        windower.send_command(("wait 0.5;input //gs c a weapon select %s"):format(tostring(id)))
+        windower.send_command(("wait 1;input //gs c a weapon select %s"):format(tostring(id)))
     else
         log.error(err)
     end
 end
 local function delete_weapon(id)
-    if _current_weapon_id == id then
+    if _current_weapon_id == tonumber(id) then
         _current_weapon_id = autoloader.default_weapon_id
-        autoloader.set_weapon(_current_weapon_id, true, true)
+        autoloader.set_weapon(_current_weapon_id, true)
     end
     sets.delete_weapon(id)
 end

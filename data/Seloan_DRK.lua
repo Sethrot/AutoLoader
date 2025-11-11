@@ -6,7 +6,7 @@ local autoloader = require("autoloader")
 --autoloader.auto_remedy = true
 --autoloader.auto_movement = true
 
--- Remember to save your basic sets:
+-- Remember to save your basic sets in-game using commands:
 -- //gs c auto sets save idle
 -- //gs c auto sets save melee
 -- //gs c auto sets save ws
