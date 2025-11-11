@@ -1,4 +1,4 @@
-local job = {}
+local autoloader = {}
 
 require("Modes")
 require("lists")
@@ -9,17 +9,17 @@ local sets                = require("autoloader-sets")
 local codex               = require("autoloader-codex")
 local log                 = require("autoloader-logger")
 
-job.default_weapon_id         = 1
-job.lockstyle                 = nil
-job.auto_echo_drops           = false
-job.auto_remedy               = false
-job.idle_refresh              = nil
-job.auto_movement             = false
-job.idle_mode                 = "default"
-job.melee_mode                = "default"
-job.magic_mode                = "default"
-job.use_auto_sets             = true
-job.auto_sets_refresh_minutes = 1440
+autoloader.default_weapon_id         = 1
+autoloader.lockstyle                 = nil
+autoloader.auto_echo_drops           = false
+autoloader.auto_remedy               = false
+autoloader.idle_refresh              = nil
+autoloader.auto_movement             = false
+autoloader.idle_mode                 = "default"
+autoloader.melee_mode                = "default"
+autoloader.magic_mode                = "default"
+autoloader.use_auto_sets             = true
+autoloader.auto_sets_refresh_minutes = 1440
 
 local _idle_mode          = M { ["description"] = "Idle", "default", "dt", "mdt" }
 local _melee_mode         = M { ["description"] = "Melee", "default", "acc", "dt", "mdt", "sb", "off" }
@@ -27,7 +27,7 @@ local _magic_mode         = M { ["description"] = "Magic", "default", "acc", "mb
 local _auto_movement_mode = M { ["description"] = "Movement", "off", "on" }
 
 local _weapons            = {}
-local _current_weapon_id  = job.default_weapon_id
+local _current_weapon_id  = autoloader.default_weapon_id
 local _keybinds           = {}
 
 
@@ -46,7 +46,7 @@ local function echo(msg)
     windower.send_command("input /echo " .. msg)
 end
 
-function job.register_keybind(key, bind)
+function autoloader.register_keybind(key, bind)
     if key and type(key) == "string" and bind and type(bind) == "string" then
         _keybinds[key] = bind
     end
@@ -100,7 +100,7 @@ local function movement_poll(now)
                 equip(sets.get(codex.CORE_SETS.movement.default))
             elseif player_x == _last_x and player_y == _last_y and moving then
                 moving = false
-                job.status_refresh()
+                autoloader.status_refresh()
             end
         end
 
@@ -177,7 +177,7 @@ do
         running = true
     end
 
-    --- Register (or replace) a periodic job.
+    --- Register (or replace) a periodic autoloader.
     -- @param key       string|number  (identifier)
     -- @param interval  number         (seconds, e.g. 0.5 or 1.0)
     -- @param fn        function(now)  (now = os.clock())
@@ -208,7 +208,7 @@ do
         local n = 0; for _ in pairs(tasks) do n = n + 1 end; return n
     end
 end
-job.poll = poll
+autoloader.poll = poll
 
 
 local function update_movement_polling()
@@ -217,14 +217,14 @@ local function update_movement_polling()
 
     if _auto_movement_mode.current == "on" then
         log.debug("Ensuring registration for " .. movement_poll_def.key)
-        job.poll.ensure_registration(movement_poll_def.key, movement_poll_def.interval, movement_poll_def.fn)
+        autoloader.poll.ensure_registration(movement_poll_def.key, movement_poll_def.interval, movement_poll_def.fn)
     else
-        job.poll.unregister(movement_poll_def.key)
+        autoloader.poll.unregister(movement_poll_def.key)
         log.debug("Unregistered " .. movement_poll_def.key)
     end
 end
 
-function job.set_movement_mode(value)
+function autoloader.set_movement_mode(value)
     local ok, err = try_set_mode(_auto_movement_mode, value)
     if not ok then
         log.error(err); return
@@ -239,64 +239,64 @@ local function cycle_movement_mode()
     update_movement_polling()
 end
 
-function job.set_idle_mode(value)
+function autoloader.set_idle_mode(value)
     local ok, err = try_set_mode(_idle_mode, value)
     if not ok then
         log.error(err); return
     end
-    if announce then echo("Idle: " .. utils.pretty_mode_value(job.get_current_idle_mode())) end
-    job.status_refresh()
+    if announce then echo("Idle: " .. utils.pretty_mode_value(autoloader.get_current_idle_mode())) end
+    autoloader.status_refresh()
 end
 
 local function cycle_idle_mode()
     log.debug("Cycling magic.")
     _idle_mode:cycle()
-    echo("Idle: " .. utils.pretty_mode_value(job.get_current_idle_mode()))
-    job.update_equip()
+    echo("Idle: " .. utils.pretty_mode_value(autoloader.get_current_idle_mode()))
+    autoloader.update_equip()
 end
-function job.get_current_idle_mode()
+function autoloader.get_current_idle_mode()
     return _idle_mode.current
 end
 
-function job.set_melee_mode(value)
+function autoloader.set_melee_mode(value)
     local ok, err = try_set_mode(_melee_mode, value)
     if not ok then
         log.error(err); return
     end
-    if announce then echo("Melee: " .. utils.pretty_mode_value(job.get_current_melee_mode())) end
-    job.status_refresh()
+    if announce then echo("Melee: " .. utils.pretty_mode_value(autoloader.get_current_melee_mode())) end
+    autoloader.status_refresh()
 end
 
 local function cycle_melee_mode()
     _melee_mode:cycle()
-    echo("Melee: " .. utils.pretty_mode_value(job.get_current_melee_mode()))
-    job.update_equip()
+    echo("Melee: " .. utils.pretty_mode_value(autoloader.get_current_melee_mode()))
+    autoloader.update_equip()
 end
-function job.get_current_melee_mode()
+function autoloader.get_current_melee_mode()
     return _melee_mode.current
 end
 
-function job.set_magic_mode(value)
+function autoloader.set_magic_mode(value)
     local ok, err = try_set_mode(_magic_mode, value)
     if not ok then log.error(err) end
-    if announce then echo("Magic: " .. utils.pretty_mode_value(job.get_current_magic_mode())) end
-    job.status_refresh()
+    if announce then echo("Magic: " .. utils.pretty_mode_value(autoloader.get_current_magic_mode())) end
+    autoloader.status_refresh()
 end
 
 local function cycle_magic_mode()
     _magic_mode:cycle()
-    echo("Magic: " .. utils.pretty_mode_value(job.get_current_magic_mode()))
-    job.update_equip()
+    echo("Magic: " .. utils.pretty_mode_value(autoloader.get_current_magic_mode()))
+    autoloader.update_equip()
 end
-function job.get_current_magic_mode()
+function autoloader.get_current_magic_mode()
     return _magic_mode.current
 end
 
-function job.get_current_weapon()
+function autoloader.get_current_weapon()
     return _current_weapon_id and _current_weapon_id > 0 and _weapons[_current_weapon_id]
 end
 
-function job.get_ability_recast(name)
+function autoloader.get_ability_recast(name)
     local recasts = windower.ffxi.get_ability_recasts()
     if not recasts or not res or not res.job_abilities then return false end
     local ja = res.job_abilities:with("en", name)
@@ -305,12 +305,12 @@ function job.get_ability_recast(name)
     return recasts[id]
 end
 
-function job.get_spell_id(name)
+function autoloader.get_spell_id(name)
     if not res or not res.spells then return nil end
     local s = res.spells:with('en', name); return s and s.id or nil
 end
 
-function job.set_weapon(id, announce)
+function autoloader.set_weapon(id, announce)
     _weapons = sets.get_weapons()
     id = tonumber(id)
     if not id then
@@ -322,18 +322,18 @@ function job.set_weapon(id, announce)
     if weapon then
         _current_weapon_id = weapon.id
         local current_weapon = _weapons[_current_weapon_id]
-        job.status_refresh()
+        autoloader.status_refresh()
         if announce then echo(("Weapon: %s"):format(pretty_weapon_display(current_weapon))) end
         return true, nil
-    elseif id == job.default_weapon_id then
+    elseif id == autoloader.default_weapon_id then
         -- The default isn't present, fallback to .weapon0
         _current_weapon_id = 0
-        job.status_refresh()
+        autoloader.status_refresh()
         if announce then echo("Weapon: None") end
         return true, nil
     elseif id == 0 then
         _current_weapon_id = 0
-        job.status_refresh()
+        autoloader.status_refresh()
         if announce then echo("Weapon: None") end
         return true, nil
     else
@@ -362,8 +362,8 @@ local function cycle_weapon()
     local current = _current_weapon_id
     if not current or not _weapons[current] then
         -- If current is invalid, prefer the default if it exists
-        if job.default_weapon_id and _weapons[job.default_weapon_id] then
-            current = job.default_weapon_id
+        if autoloader.default_weapon_id and _weapons[autoloader.default_weapon_id] then
+            current = autoloader.default_weapon_id
         else
             current = 0
         end
@@ -393,7 +393,7 @@ local function cycle_weapon()
     local next_id = ids[next_index]
     if next_id then
         -- Second arg = announce; your set_weapon signature expects that
-        job.set_weapon(next_id, true)
+        autoloader.set_weapon(next_id, true)
     end
 end
 local function add_weapon(id, name)
@@ -406,13 +406,13 @@ local function add_weapon(id, name)
 end
 local function delete_weapon(id)
     if _current_weapon_id == id then
-        _current_weapon_id = job.default_weapon_id
-        job.set_weapon(_current_weapon_id, true, true)
+        _current_weapon_id = autoloader.default_weapon_id
+        autoloader.set_weapon(_current_weapon_id, true, true)
     end
     sets.delete_weapon(id)
 end
 
-function job.status_refresh()
+function autoloader.status_refresh()
     status_change(player.status, player.status)
 end
 
@@ -433,8 +433,8 @@ local function auto_remedy(spell)
     end
 end
 
-local utsu_ni_id       = job.utsusemi_ni_id or job.get_spell_id("Utsusemi: Ni")
-local utsu_ichi_id     = job.utsusemi_ichi_id or job.get_spell_id("Utsusemi: Ichi")
+local utsu_ni_id       = autoloader.utsusemi_ni_id or autoloader.get_spell_id("Utsusemi: Ni")
+local utsu_ichi_id     = autoloader.utsusemi_ichi_id or autoloader.get_spell_id("Utsusemi: Ichi")
 local COPY_IMAGE_NAMES = { 'Copy Image', 'Copy Image (2)', 'Copy Image (3)', 'Copy Image (4)' }
 local COPY_IMAGE_IDS   = { 66, 444, 445, 446 }
 local function utsusemi_ichi_cancel_shadow()
@@ -481,8 +481,8 @@ local function auto_utsusemi()
 end
 
 local function player_should_refresh_idle()
-    if job.idle_refresh == false or job.idle_refresh == true then
-        return job.idle_refresh
+    if autoloader.idle_refresh == false or autoloader.idle_refresh == true then
+        return autoloader.idle_refresh
     else
         return player.mp > 200
     end
@@ -657,20 +657,20 @@ local function get_ordered_aftercast_set_names(spell)
     return set_names:reverse()
 end
 
-job.stub_before_get_sets = function() end
-before_get_sets = job.stub_before_get_sets
-job.stub_after_get_sets = function() end
-after_get_sets = job.stub_after_get_sets
+autoloader.stub_before_get_sets = function() end
+before_get_sets = autoloader.stub_before_get_sets
+autoloader.stub_after_get_sets = function() end
+after_get_sets = autoloader.stub_after_get_sets
 function get_sets()
-    local terminate = utils.call_hook("before_get_sets", job.stub_before_get_sets)
+    local terminate = utils.call_hook("before_get_sets", autoloader.stub_before_get_sets)
     if terminate then return end
 
-    try_set_mode(_auto_movement_mode, job.auto_movement)
+    try_set_mode(_auto_movement_mode, autoloader.auto_movement)
     update_movement_polling()
 
-    try_set_mode(_idle_mode, job.idle_mode)
-    try_set_mode(_melee_mode, job.melee_mode)
-    try_set_mode(_magic_mode, job.magic_mode)
+    try_set_mode(_idle_mode, autoloader.idle_mode)
+    try_set_mode(_melee_mode, autoloader.melee_mode)
+    try_set_mode(_magic_mode, autoloader.magic_mode)
    
     if next(_keybinds) ~= nil then
         for key, bind in pairs(_keybinds) do
@@ -679,27 +679,27 @@ function get_sets()
         end
     end
     
-    if job.use_auto_sets then
+    if autoloader.use_auto_sets then
         sets.generate_auto_sets(0.05, 32, 0.1)
     end
 
     _weapons = sets.get_weapons()
     log.debug("Loaded weapons.")
 
-    if job.lockstyle then
-        windower.send_command("wait 1;input /lockstyleset " .. job.lockstyle)
+    if autoloader.lockstyle then
+        windower.send_command("wait 1;input /lockstyleset " .. autoloader.lockstyle)
     end
     windower.send_command("wait 1;input //gs c status_refresh")
 
-    utils.call_hook("after_get_sets", job.stub_after_get_sets)
+    utils.call_hook("after_get_sets", autoloader.stub_after_get_sets)
 end
 
-job.stub_before_status_change = function() end
-before_status_change = job.stub_before_status_change
-job.stub_after_status_change = function() end
-after_status_change = job.stub_after_status_change
+autoloader.stub_before_status_change = function() end
+before_status_change = autoloader.stub_before_status_change
+autoloader.stub_after_status_change = function() end
+after_status_change = autoloader.stub_after_status_change
 function status_change(new, old)
-    local terminate = utils.call_hook("before_status_change", job.stub_before_status_change, new, old)
+    local terminate = utils.call_hook("before_status_change", autoloader.stub_before_status_change, new, old)
     if terminate then return end
     log.debug(("Status %s -> %s"):format(old, new))
 
@@ -711,60 +711,60 @@ function status_change(new, old)
         equip(sets.build_set(get_ordered_mode_set_names(_idle_mode)))
     end
 
-    utils.call_hook("after_status_change", job.stub_after_status_change, new, old)
+    utils.call_hook("after_status_change", autoloader.stub_after_status_change, new, old)
 end
 
-job.stub_before_precast = function() end
-before_precast = job.stub_before_precast
-job.stub_after_precast = function() end
-after_precast = job.stub_after_precast
+autoloader.stub_before_precast = function() end
+before_precast = autoloader.stub_before_precast
+autoloader.stub_after_precast = function() end
+after_precast = autoloader.stub_after_precast
 function precast(spell)
-    if job.auto_echo_drops then
+    if autoloader.auto_echo_drops then
         local terminate = auto_echo_drops(spell)
         if terminate then return end
     end
-    if job.auto_remedy then
+    if autoloader.auto_remedy then
         local terminate = auto_remedy(spell)
         if terminate then return end
     end
-    local terminate = utils.call_hook("before_precast", job.stub_before_precast, spell)
+    local terminate = utils.call_hook("before_precast", autoloader.stub_before_precast, spell)
     if terminate then return end
 
     equip(sets.build_set(get_ordered_precast_set_names(spell)))
 
-    utils.call_hook("after_precast", job.stub_after_precast, spell)
+    utils.call_hook("after_precast", autoloader.stub_after_precast, spell)
 end
 
-job.stub_before_midcast = function() end
-before_midcast = job.stub_before_midcast
-job.stub_after_midcast = function() end
-after_midcast = job.stub_after_midcast
+autoloader.stub_before_midcast = function() end
+before_midcast = autoloader.stub_before_midcast
+autoloader.stub_after_midcast = function() end
+after_midcast = autoloader.stub_after_midcast
 function midcast(spell)
-    local terminate = utils.call_hook("before_midcast", job.stub_before_midcast, spell)
+    local terminate = utils.call_hook("before_midcast", autoloader.stub_before_midcast, spell)
     if terminate then return end
 
     equip(sets.build_set(get_ordered_midcast_set_names(spell)))
 
-    utils.call_hook("after_midcast", job.stub_after_midcast, spell)
+    utils.call_hook("after_midcast", autoloader.stub_after_midcast, spell)
 end
 
-job.stub_before_aftercast = function() end
-before_aftercast = job.stub_before_aftercast
-job.stub_after_aftercast = function() end
-after_aftercast = job.stub_after_aftercast
+autoloader.stub_before_aftercast = function() end
+before_aftercast = autoloader.stub_before_aftercast
+autoloader.stub_after_aftercast = function() end
+after_aftercast = autoloader.stub_after_aftercast
 function aftercast(spell)
-    local terminate = utils.call_hook("before_aftercast", job.stub_before_aftercast, spell)
+    local terminate = utils.call_hook("before_aftercast", autoloader.stub_before_aftercast, spell)
     if terminate then return end
 
-    job.status_refresh()
+    autoloader.status_refresh()
 
-    utils.call_hook("after_aftercast", job.stub_after_aftercast, spell)
+    utils.call_hook("after_aftercast", autoloader.stub_after_aftercast, spell)
 end
 
-job.stub_before_file_unload = function() end
-before_file_unload = job.stub_before_file_unload
+autoloader.stub_before_file_unload = function() end
+before_file_unload = autoloader.stub_before_file_unload
 function file_unload()
-    utils.call_hook("before_file_unload", job.stub_before_file_unload)
+    utils.call_hook("before_file_unload", autoloader.stub_before_file_unload)
 
     -- Unbind keybinds
     if next(_keybinds) ~= nil then
@@ -785,7 +785,7 @@ end
 
 local function handle_idle_command(cmd)
     if cmd then
-        job.set_idle_mode(cmd)
+        autoloader.set_idle_mode(cmd)
         return
     end
     cycle_idle_mode()
@@ -793,7 +793,7 @@ end
 
 local function handle_melee_command(cmd)
     if cmd then
-        job.set_melee_mode(cmd)
+        autoloader.set_melee_mode(cmd)
         return
     end
     cycle_melee_mode()
@@ -801,7 +801,7 @@ end
 
 local function handle_magic_command(cmd)
     if cmd then
-        job.set_magic_mode(cmd)
+        autoloader.set_magic_mode(cmd)
         return
     end
     cycle_magic_mode()
@@ -822,7 +822,7 @@ local function handle_weapon_command(cmd)
         local ok, err = delete_weapon(a2)
         if ok == false then log.error(err) end
     elseif a1 == "select" then
-        local ok, err = job.set_weapon(a2, true)
+        local ok, err = autoloader.set_weapon(a2, true)
         if not ok then log.error(err) end
     elseif a1 == "next" then
         cycle_weapon()
@@ -831,7 +831,7 @@ end
 
 local function handle_movement_command(cmd)
     if cmd then
-        job.set_movement_mode(cmd, true)
+        autoloader.set_movement_mode(cmd, true)
         return
     else
         cycle_movement_mode()
@@ -930,10 +930,10 @@ local function handle_help_command(cmd)
     end
 end
 
-job.stub_before_self_command = function() end
-before_self_command = job.stub_before_self_command
+autoloader.stub_before_self_command = function() end
+before_self_command = autoloader.stub_before_self_command
 function self_command(cmd)
-    local terminate = utils.call_hook("before_self_command", job.stub_before_file_unload)
+    local terminate = utils.call_hook("before_self_command", autoloader.stub_before_file_unload)
     if terminate then return end
 
     local a1, rest = utils.split_args(cmd)
@@ -959,13 +959,13 @@ function self_command(cmd)
         elseif a2 == "help" then
             handle_help_command(rest2)
         elseif a2 == "status_refresh" then
-            job.status_refresh()
+            autoloader.status_refresh()
         else
             handle_help_command()
         end
     end
 end
 
-log.debug("autoloader-job ready.")
+log.debug("autoloader ready.")
 
-return job
+return autoloader

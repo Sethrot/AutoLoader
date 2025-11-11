@@ -1,19 +1,19 @@
 -- Seloan_RDM.lua
 -- Basic Red Mage (RDM) configuration file with AutoLoader support
-local job = require("autoloader-job")
-job.auto_echo_drops = true
-job.auto_remedy = true
-job.lockstyle = 20
-job.auto_movement = "on"
-job.register_keybind("^F10", "input //ez cycle back")
-job.register_keybind("!F10", "input //ez cycle")
+local autoloader = require("autoloader")
+autoloader.auto_echo_drops = true
+autoloader.auto_remedy = true
+autoloader.lockstyle = 20
+autoloader.auto_movement = "on"
+autoloader.register_keybind("^F10", "input //ez cycle back")
+autoloader.register_keybind("!F10", "input //ez cycle")
 
 local log = require("autoloader-logger")
 
 function before_precast(spell)
     if not spell or spell.action_type ~= "Magic" or spell.skill ~= "Enhancing Magic" then return end
 
-    local composure_recast = job.get_ability_recast("Composure")
+    local composure_recast = autoloader.get_ability_recast("Composure")
     
     -- If Composure not up and it's ready, use it and then re-cast.
     if not buffactive['Composure'] and composure_recast == 0 then
