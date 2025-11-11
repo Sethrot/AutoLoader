@@ -19,8 +19,7 @@ Windower/addons/GearSwap/libs/
 
 2) **Add one require to the top of your job file**
 ```lua
--- minimal job file, ex: GearSwap/data/Seloan_DRK.lua
-require("autoloader-job") 
+local job = require("autoloader-job") 
 ```
 Check [data/Seloan_DRK.lua](https://github.com/NeatMachine/AutoLoader/blob/main/data/Seloan_DRK.lua) for a minimal job file.
 
@@ -100,20 +99,6 @@ Named spells assume midcast, named anything else assumes midcast. (If you do sav
 ```
 /gs c a help
 /gs c a help sets
-```
-
----
-
-## Minimal “works everywhere” job file
-```lua
--- data/Char_JOB.lua
-local job = require("autoloader-job")  -- AutoLoader: generates + equips core sets
-
--- Optional QoL:
--- job.lockstyle = 20
--- job.auto_echo_drops = true   -- use Echo Drops if silenced before recasting
--- job.auto_remedy = true       -- use Remedy if paralyzed before recasting
--- job.idle_refresh = true      -- idle state will look for refresh gear (or idle.refresh)
 ```
 
 ## Philosophy
