@@ -63,7 +63,7 @@ You can also save a set for any ability or spell by name, and *autoloader-jobs* 
 The *autoloader-sets* library will give you the set mangement functionality independently of *autoloader-job*, so you can use it with Mote or whatever else.
 An example of that would be:
 ```
-autosets = require("autoloader-sets")
+local autosets = require("autoloader-sets")
 
 get_sets()
    -- some other stuff you're doing in your lua
