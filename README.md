@@ -35,7 +35,7 @@ However, the "Optimize Gear" button for FFXI is complicated, and it works about 
 
 *If you're a FFXI master tactician, please consider contributing to [libs/autoloader-codex.](https://github.com/NeatMachine/AutoLoader/blob/main/libs/autoloader-codex.lua)*
 
-*SET_FUNCTIONS define the parameters used to calculate the optimal gear for each set. Most of it is AI generated for now. Check the calc_* functions*
+*SET_FUNCTIONS define the parameters used to calculate the optimal gear for each set. Most of it is AI generated for now. Check the calc_ functions*
 
 **Sets Management**
    
