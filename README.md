@@ -40,7 +40,7 @@ To get the most out of this tool you'll want to save at least a few basic sets y
 
 **Sets Management**
    
-The primary reason AutoLoader was created was because I'm a poorly equipped casual and I don't want to edit luas every time I get a new piece of gear.
+The primary reason AutoLoader was created is because I'm a poorly equipped casual and I don't want to edit luas every time I get a new piece of gear.
 
 Leveraging GearSwap's export command, we allow you to manage (save/update/view/delete) named sets using the *//gs c auto sets* command. 
 These are some of the important ones if you choose to let the *autoloader-jobs* library manage your states for you.
