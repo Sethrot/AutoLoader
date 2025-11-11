@@ -55,7 +55,7 @@ Right below are some of the most important ones if you choose to let the *autolo
 
 You can also save a set for any ability or spell by name, and *autoloader-jobs* will use it automatically (precast for abilities, midcast for spells)
 ```
-//gs c auto sets save savage blade -- set names will be automatically normalized, replacing spaces with '_' and removing apostrophes.
+//gs c auto sets save savage blade
 ```
 Save those sets above, keep saving them as you get new gear, and create a couple of sets for your weaponskills, and you'll be getting 90% of the value out of AutoLoader.
 
