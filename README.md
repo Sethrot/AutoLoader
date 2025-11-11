@@ -23,6 +23,8 @@ include("autoloader")
 ```
 Check [data/Seloan_DRK.lua](https://github.com/NeatMachine/AutoLoader/blob/main/data/Seloan_DRK.lua) for a minimal job file.
 
+For intermediate, [data/Seloan_RDM.lua](https://github.com/NeatMachine/AutoLoader/blob/main/data/Seloan_RDM.lua) is my starter RDM file.
+
 
 ## What it does
 **Auto-Generated Sets**
@@ -53,7 +55,7 @@ Right below are some of the most important ones if you choose to let the *autolo
 
 You can also save a set for any ability or spell by name, and *autoloader-jobs* will use it automatically (precast for abilities, midcast for spells)
 ```
-//gs c auto sets save savage blade -- set names will be automatically normalized, replacing spaces with '_' and removing apostrophes.
+//gs c auto sets save savage blade
 ```
 Save those sets above, keep saving them as you get new gear, and create a couple of sets for your weaponskills, and you'll be getting 90% of the value out of AutoLoader.
 
@@ -106,5 +108,5 @@ Named spells assume midcast, named anything else assumes midcast. (If you do sav
 ## Philosophy
 
 - **Plain GearSwap tables.** Everything it generates/saves is just a normal set you can open and edit. This makes it immediately portable to existing luas.
-- **Your saves win.** Anything you save under `jobs/<job>/` overrides auto sets.
+- **Your saves win.** Anything you save yourself overrides auto sets.
 - **Better than nothing.** Core five sets (idle, melee, fastcast, ws, + one magic family) carry 90% of play. Add detail later as you like.
