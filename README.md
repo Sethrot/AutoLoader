@@ -58,9 +58,6 @@ You can also save a set for any ability or spell by name, and *autoloader* will 
 ```
 Save those sets above, keep saving them as you get new gear, and create a couple of sets for your weaponskills, and you'll be getting 90% of the value out of AutoLoader.
 
-But we'll talk about how it works in more detail below.
-
-## Advanced
 **Keep your lua and just use *sets***
 
 The *autoloader-sets* library will give you the set mangement functionality independently of *autoloader*, so you can use it with Mote or whatever else.
@@ -75,11 +72,9 @@ get_sets()
 end
 ```
 
-***autoloader* details**
+***More AutoLoader details**
 
-An important part of this tool is *autoloader-codex*, which is meant to (hopefully) be contributed to by people more knowledgeable than I am. Codex describes stats, spells, sets, etc. and helps to drive *autoloader* decisions.
-
-AutoLoader makes heavy use of GearSwap's combine_set to load relevant sets in order of specificity.
+AutoLoader makes heavy use of GearSwap's set combinations to load relevant sets in order of specificity.
 
 Whenever you cast Fire IV, AutoLoader does, in order:
 ```
