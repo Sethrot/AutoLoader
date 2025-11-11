@@ -19,7 +19,6 @@ autoloader.idle_mode                 = "default"
 autoloader.melee_mode                = "default"
 autoloader.magic_mode                = "default"
 autoloader.use_auto_sets             = true
-autoloader.auto_sets_refresh_minutes = 1440
 
 local _idle_mode                     = M { ["description"] = "Idle", "default", "dt", "mdt" }
 local _melee_mode                    = M { ["description"] = "Melee", "default", "acc", "dt", "mdt", "sb", "off" }
@@ -810,7 +809,7 @@ end
 
 local function handle_movement_command(cmd)
     if cmd then
-        autoloader.set_movement_mode(cmd, true)
+        autoloader.set_movement_mode(cmd)
         return
     else
         cycle_movement_mode()
