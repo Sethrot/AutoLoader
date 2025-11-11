@@ -56,7 +56,7 @@ local function calc_melee_default(s)
 end
 ```
 
-To get the most out of this tool you'll want to save at least a few basic sets yourself.
+To get the most out of this tool, instead of relying on the automatically generated sets you'll want to save at least a few of the core sets yourself. They're shared below.
 
 **Sets Management**
    
