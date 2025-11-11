@@ -92,7 +92,7 @@ equip "fire iv" set (if it exists)
 ```
 For each of those steps, it also looks for the automatically generated sets if you haven't defined one. 
 There are no automatically defined sets for explicit spells, abilities, or weaponskills - only for the predefined sets.
-Named spells assume midcast, named anything else assumes midcast. (If you do save precast.fire or midcast.savage_blade for whatever reason, it *will* be used for the step you specified.)
+Named spells assume midcast, named anything else assumes precast. (If you do save precast.fire or midcast.savage_blade for whatever reason, it *will* be used for the step you specified.)
 
 
 ## Help
