@@ -43,7 +43,7 @@ To get the most out of this tool you'll want to save at least a few basic sets y
 The primary reason AutoLoader was created is because I'm a poorly equipped casual and I don't want to edit luas every time I get a new piece of gear.
 
 Leveraging GearSwap's export command, we allow you to manage (save/update/view/delete) named sets using the *//gs c auto sets* command. 
-These are some of the important ones if you choose to let the *autoloader-jobs* library manage your states for you.
+Right below are some of the most important ones if you choose to let the *autoloader-jobs* library manage your states for you.
 ```
 //gs c auto sets save idle
 //gs c auto sets save melee
@@ -56,6 +56,9 @@ You can also save a set for any ability or spell by name, and *autoloader-jobs* 
 ```
 //gs c auto sets save savage blade -- set names will be automatically normalized, replacing spaces with '_' and removing apostrophes.
 ```
+Save those sets above, keep saving them as you get new gear, and create a couple of sets for your weaponskills, and you'll be getting 90% of the value out of AutoLoader.
+
+But we'll talk about how it works in more detail below.
 
 ## Advanced
 **Keep your lua and just use *sets***
@@ -91,7 +94,6 @@ equip "fire iv" set (if it exists)
 For each of those steps, it also looks for the automatically generated sets if you haven't defined one. 
 There are no automatically defined sets for explicit spells, abilities, or weaponskills - only for the predefined sets.
 Named spells assume midcast, named anything else assumes midcast. (If you do save precast.fire or midcast.savage_blade for whatever reason, it *will* be used for the step you specified.)
-
 
 
 ## Help
