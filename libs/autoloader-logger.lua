@@ -18,7 +18,7 @@ local _verbosity_display = {
 
 logger.options = {
   prefix = "[AutoLoader]",
-  verbosity = _VERBOSITY.INFO,
+  verbosity = _VERBOSITY.DEBUG, -- TODO: DEV MODE, CHANGE => INFO
   color = 207,
   max_chars_per_line = 80,
 }

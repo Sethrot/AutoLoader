@@ -11,25 +11,22 @@ local _root = sets._root or (windower and windower.addon_path) or "."
 local _cache = {}
 
 sets.naked = {
-  main = "",
-  sub = "",
-  range = "",
-  ammo = "",
-  head = "",
-  body = "",
-  hands = "",
-  legs = "",
-  feet = "",
-  back = "",
-  left_ring = "",
-  right_ring = "",
-  left_ear = "",
-  right_ear = "",
-  neck = "",
-  waist = ""
+  head = empty,
+  body = empty,
+  hands = empty,
+  legs = empty,
+  feet = empty,
+  back = empty,
+  left_ring = empty,
+  right_ring = empty,
+  left_ear = empty,
+  right_ear = empty,
+  neck = empty,
+  waist = empty
 }
 
 local function get_exported_file_prefix()
+  if not windower or not windower.ffxi or not windower.ffxi.get_player then return nil end
   return windower.ffxi.get_player().name .. "_"
 end
 
@@ -248,7 +245,7 @@ function sets.save(name)
 
   utils.wait_for_file(
     exported_file,
-    0.3, 0.1,
+    3, 0.25,
     function(_)
       local target_file = utils.join_paths(get_job_path(), exported_filename)
       local ok, err = utils.move_file(exported_file, target_file)
@@ -1191,7 +1188,7 @@ function sets.handle_sets_command(cmd)
     end
     equip(sets.naked)
     equip(set)
-    log.debug("Loaded set " .. a2)
+    log.debug("Equipped set " .. a2)
   elseif a1 == "delete" then
     local result, err = sets.delete(a2)
     if result then

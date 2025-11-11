@@ -2,12 +2,12 @@ local autoloader = {}
 
 require("Modes")
 require("lists")
-local res = require("resources")
+local res                            = require("resources")
 
-local utils               = require("autoloader-utils")
-local sets                = require("autoloader-sets")
-local codex               = require("autoloader-codex")
-local log                 = require("autoloader-logger")
+local utils                          = require("autoloader-utils")
+local sets                           = require("autoloader-sets")
+local codex                          = require("autoloader-codex")
+local log                            = require("autoloader-logger")
 
 autoloader.default_weapon_id         = 1
 autoloader.lockstyle                 = nil
@@ -21,14 +21,14 @@ autoloader.magic_mode                = "default"
 autoloader.use_auto_sets             = true
 autoloader.auto_sets_refresh_minutes = 1440
 
-local _idle_mode          = M { ["description"] = "Idle", "default", "dt", "mdt" }
-local _melee_mode         = M { ["description"] = "Melee", "default", "acc", "dt", "mdt", "sb", "off" }
-local _magic_mode         = M { ["description"] = "Magic", "default", "acc", "mb" }
-local _auto_movement_mode = M { ["description"] = "Movement", "off", "on" }
+local _idle_mode                     = M { ["description"] = "Idle", "default", "dt", "mdt" }
+local _melee_mode                    = M { ["description"] = "Melee", "default", "acc", "dt", "mdt", "sb", "off" }
+local _magic_mode                    = M { ["description"] = "Magic", "default", "acc", "mb" }
+local _auto_movement_mode            = M { ["description"] = "Movement", "off", "on" }
 
-local _weapons            = {}
-local _current_weapon_id  = autoloader.default_weapon_id
-local _keybinds           = {}
+local _weapons                       = {}
+local _current_weapon_id             = autoloader.default_weapon_id
+local _keybinds                      = {}
 
 
 local _mode_display_names = {
@@ -81,7 +81,10 @@ end
 local moving = false
 local _last_move_check, _last_x, _last_y = nil, nil, nil
 local function movement_poll(now)
-    if not player then _last_move_check = nil return end
+    if not player then
+        _last_move_check = nil
+        return
+    end
     if not _last_move_check then
         _last_move_check = now
         _last_x, _last_y = player.x, player.y
@@ -91,8 +94,11 @@ local function movement_poll(now)
         _last_move_check = now
 
         local me = windower.ffxi.get_mob_by_index(player.index)
-        if not me then _last_move_check = nil return end
-        
+        if not me then
+            _last_move_check = nil
+            return
+        end
+
         local player_x, player_y = me.x, me.y
         if player.status and player.status:lower() == "idle" then
             if (player_x ~= _last_x or player_y ~= _last_y) and not moving then
@@ -122,11 +128,6 @@ do
     local running = false
     local ev_id   = nil
 
-    local function trace(err)
-        return (debug and debug.traceback) and debug.traceback("Task error: " .. tostring(err), 2)
-               or ("Task error: " .. tostring(err))
-    end
-
     local function detach_if_empty()
         if next(tasks) ~= nil then return end
         if running and ev_id and windower and windower.unregister_event then
@@ -138,54 +139,31 @@ do
     local function ensure_handler()
         if running then return end
 
+        -- Replace the poller handler with this version
         local function handler()
-            -- nothing scheduled → detach if we can, otherwise cheap return
-            if next(tasks) == nil then
-                detach_if_empty()
-                return
-            end
-
-            local now = os.clock()
-
-            -- collect due keys first (safe against registry mutations during callbacks)
-            local due = {}
-            for k, t in pairs(tasks) do
-                if now >= t.next_due then
-                    due[#due + 1] = k
-                end
-            end
-
-            -- run due tasks
-            for i = 1, #due do
-                local k = due[i]
-                local t = tasks[k]
-                if t then
-                    local ok, err = pcall(t.fn, now)
-                    -- even on error, schedule next tick (keeps the loop alive but won’t crash)
-                    t.next_due = now + t.interval
-                    if not ok and log and log.error then
-                        log.error(trace(err))
+            local now = utils.now()
+            for key, t in pairs(tasks) do
+                if t.next_due <= now then
+                    local ok, err = pcall(t.fn)
+                    if not ok then
+                        log.error(("Poll '%s' failed: %s"):format(tostring(key), tostring(err)))
                     end
+                    t.next_due = now + t.interval
                 end
             end
-
-            -- if callbacks removed everything, detach
-            detach_if_empty()
         end
 
         ev_id = windower.register_event('prerender', handler)
         running = true
     end
 
-    --- Register (or replace) a periodic autoloader.
-    -- @param key       string|number  (identifier)
-    -- @param interval  number         (seconds, e.g. 0.5 or 1.0)
-    -- @param fn        function(now)  (now = os.clock())
-    function poll.ensure_registration(key, interval, fn)
-        assert(key ~= nil, 'poll.ensure_registration: key required')
-        assert(type(fn) == 'function', 'poll.ensure_registration: fn must be function')
-        if tasks[key] then return false end
-        tasks[key] = { fn = fn, interval = tonumber(interval) or 1.0, next_due = os.clock() }
+    function poll.ensure_registration(key, interval_sec, fn)
+        if not key or not interval_sec or not fn then return false end
+        tasks[key] = {
+            interval = tonumber(interval_sec) or 1.0,
+            fn       = fn,
+            next_due = utils.now() + (tonumber(interval_sec) or 1.0),
+        }
         ensure_handler()
         return true
     end
@@ -442,14 +420,13 @@ local function utsusemi_ichi_cancel_shadow()
     for i, name in ipairs(COPY_IMAGE_NAMES) do
         if buffactive[name] then
             cancelled = true
-            windower.send_command("input /cancel " .. tostring(COPY_IMAGE_IDS[i]) .. ";wait 0.4")
+            windower.send_command("input /cancel " .. tostring(COPY_IMAGE_IDS[i]) .. ";wait 0.4;/ma 'Utsusemi: Ichi' <me>")
+            log.info("Utsusemi: Ichi => Cancel Shadows => Utsusemi: Ichi")
             break
         end
     end
-    windower.send_command("input /ma 'Utsusemi: Ichi' <me>")
-    if cancelled then
-        log.info("Utsusemi: Ichi => Cancel Shadows => Utsusemi: Ichi")
-    else
+    if not cancelled then
+        windower.send_command("input /ma 'Utsusemi: Ichi' <me>")
         log.info("Utsusemi: Ichi")
     end
 end
@@ -459,9 +436,8 @@ local function auto_utsusemi()
     local ni_recast   = (utsu_ni_id and recasts[utsu_ni_id]) or 9999
     local ichi_recast = (utsu_ichi_id and recasts[utsu_ichi_id]) or 9999
 
-    local n           = 0
-    for _, name in ipairs(COPY_IMAGE_NAMES) do if buffactive[name] then n = n + 1 end end
-    local shadows = math.min(n, 4)
+    local shadows = 0
+    for i, name in ipairs(COPY_IMAGE_NAMES) do if buffactive[name] then shadows = i break end end
 
     if shadows >= 3 then
         log.info("3+ Shadows, Utsusemi Skipped.")
@@ -537,7 +513,9 @@ local function player_is_dw()
         local main_id
         for sid, sdef in pairs(res.slots) do
             local name = (sdef.en or sdef.english or sdef.name) or ""
-            if name:lower() == 'main' then main_id = sid; break end
+            if name:lower() == 'main' then
+                main_id = sid; break
+            end
         end
         if main_id and slots[main_id] then return true end
     end
@@ -627,17 +605,17 @@ local function get_ordered_midcast_set_names(spell)
         end
 
         local current_magic_mode = _magic_mode.current
-        if current_magic_mode ~= "default" then
-            local mode_sets = get_ordered_mode_set_names(_magic_mode):reverse()
-            for _, v in ipairs(mode_sets) do
-                set_names:append(v)
-            end
+        if current_magic_mode and current_magic_mode ~= "default" then
+            set_names:append("midcast." .. current_magic_mode)
+            if normalized_name then set_names:append("midcast." .. current_magic_mode .. "." .. normalized_name) end
+            if base_name then set_names:append("midcast." .. current_magic_mode .. "." .. base_name) end
         end
 
-        local predefined_set = codex.SPELL_CASTING_SETS[spell]
+        -- FIX: key codex with strings
+        local predefined_set = normalized_name and codex.SPELL_CASTING_SETS[normalized_name]
         if predefined_set then set_names:append(predefined_set) end
 
-        local base_predefined_set = codex.SPELL_CASTING_SETS[codex.get_base(spell)]
+        local base_predefined_set = base_name and codex.SPELL_CASTING_SETS[base_name]
         if base_predefined_set then set_names:append(base_predefined_set) end
 
         local skill_name = spell.skill and utils.sanitize(spell.skill:match("^(%S+)"))
@@ -647,6 +625,7 @@ local function get_ordered_midcast_set_names(spell)
 
     return set_names:reverse()
 end
+
 
 local function get_ordered_aftercast_set_names(spell)
     local set_names = L {}
@@ -671,14 +650,14 @@ function get_sets()
     try_set_mode(_idle_mode, autoloader.idle_mode)
     try_set_mode(_melee_mode, autoloader.melee_mode)
     try_set_mode(_magic_mode, autoloader.magic_mode)
-   
+
     if next(_keybinds) ~= nil then
         for key, bind in pairs(_keybinds) do
             local ok = pcall(function() windower.send_command(("bind %s %s"):format(key, bind)) end)
             if not ok then log.error(("Failed to bind %s => %s"):format(key, bind)) end
         end
     end
-    
+
     if autoloader.use_auto_sets then
         sets.generate_auto_sets(0.05, 32, 0.1)
     end
@@ -933,7 +912,7 @@ end
 autoloader.stub_before_self_command = function() end
 before_self_command = autoloader.stub_before_self_command
 function self_command(cmd)
-    local terminate = utils.call_hook("before_self_command", autoloader.stub_before_file_unload)
+    local terminate = utils.call_hook("before_self_command", autoloader.stub_before_self_command)
     if terminate then return end
 
     local a1, rest = utils.split_args(cmd)

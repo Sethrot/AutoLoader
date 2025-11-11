@@ -2,6 +2,14 @@ require("lists")
 
 local utils = {}
 
+function utils.now()
+    local socket = rawget(_G, "socket")
+    if socket and type(socket.gettime) == "function" then
+        return socket.gettime()
+    end
+    return os.clock()
+end
+
 function utils.call_hook(name, stub, ...)
   local fn = rawget(_G, name)
   if type(fn) == "function" and fn ~= stub then
@@ -167,8 +175,16 @@ function utils.ensure_dir(path)
 end
 
 function utils.remove_file(path)
-  if windower.file_exists(path) then
-    os.remove(path)
+  if not path or path == "" then return false end
+  if windower and windower.file_exists then
+    if windower.file_exists(path) then
+      os.remove(path)
+      return true
+    end
+    return false
+  else
+    local ok = os.remove(path)
+    return ok and true or false
   end
 end
 
@@ -235,42 +251,31 @@ function utils.move_file(src, dst)
   return true, nil
 end
 
-function utils.wait_for_file(path, timeout_s, poll_s, on_ready, on_timeout)
-  path = tostring(path or "")
-  local deadline = os.clock() + (tonumber(timeout_s) or 1.5)
-  local interval = tonumber(poll_s) or 0.25
-
-  local function safe_call(fn, ...)
-    if type(fn) == "function" then
-      local ok, err = pcall(fn, ...)
-      if not ok and utils and utils.warn then utils.warn(("wait_for_file callback error: %s"):format(tostring(err))) end
-    end
-  end
+function utils.wait_for_file(path, timeout_s, poll_s, on_found, on_timeout)
+  local deadline = utils.now() + math.max(tonumber(timeout_s) or 0, 1.0)   -- min 1.0s
+  local interval = math.max(tonumber(poll_s) or 0, 0.10)             -- min 0.10s
 
   local function step()
-    -- found?
     if windower and windower.file_exists and windower.file_exists(path) then
-      safe_call(on_ready, path)
+      if on_found then pcall(on_found, path) end
       return
     end
-    -- timed out?
-    if os.clock() >= deadline then
-      safe_call(on_timeout, path)
+    if utils.now() >= deadline then
+      if on_timeout then pcall(on_timeout, path) end
       return
     end
-    -- reschedule (non-blocking)
     if coroutine and coroutine.schedule then
       coroutine.schedule(step, interval)
     else
-      -- extremely defensive fallback: last-ditch minimal delay
-      local t0 = os.clock()
-      while os.clock() - t0 < math.min(interval, 0.05) do end
+      -- Non-Windower (tests): avoid spinning the CPU
+      if socket and socket.sleep then socket.sleep(math.min(interval, 0.25)) end
       step()
     end
   end
 
   step()
 end
+
 
 function utils.atomic_write(dst, bytes)
   dst = tostring(dst or "")
