@@ -57,7 +57,8 @@ You can also save a set for any ability or spell by name, and *autoloader-jobs* 
 
 ## Advanced
 **Keep your lua and just use *sets***
-The *autoloader-sets* library will give you the set maangement functionality independently of *autoloader-job*, so you can use it with Mote or whatever else.
+
+The *autoloader-sets* library will give you the set mangement functionality independently of *autoloader-job*, so you can use it with Mote or whatever else.
 An example of that would be:
 ```
 autosets = require("autoloader-sets")
@@ -70,6 +71,7 @@ end
 ```
 
 ***autoloader-job* details**
+
 A lot of the brains behind this library live in *autoloader-codex*, which is meant to (hopefully) be contributed to by people more knowledgeable than I am.
 What you'll notice if you look at that file, is that there are many predefined sets for more common scenarios.
 
