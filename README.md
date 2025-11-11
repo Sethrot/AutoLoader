@@ -26,7 +26,7 @@ Check [data/Seloan_DRK.lua](https://github.com/NeatMachine/AutoLoader/blob/main/
 
 
 ## What it does
-**Auto-generated Sets**
+**Auto-Generated Sets**
 
 Whenever you change jobs, AutoLoader will immediately **scan your gear and generate baseline sets** (saved in data/jobs/drk/auto)
 This is an "Optimize Gear" button for FFXI, and it works for various situations like idle, melee/engaged, fastcast for casting, etc.
