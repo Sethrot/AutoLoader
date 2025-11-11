@@ -1,7 +1,8 @@
 # AutoLoader (for GearSwap)
 
-AutoLoader automatically builds and equips GearSwap sets from the gear you already own.  
-It lives in `GearSwap/libs` and runs when your job file loads. No separate addon needed.
+AutoLoader exposes sets management to the command window and loads them from disk, saving you from modifying luas whenever your gear changes.
+AutoLoader is also able to automatically generate builds from the gear you already own.  
+It lives in `GearSwap/libs` and runs when your job file loads.
 
 ---
 
