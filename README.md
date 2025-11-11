@@ -108,5 +108,5 @@ Named spells assume midcast, named anything else assumes midcast. (If you do sav
 ## Philosophy
 
 - **Plain GearSwap tables.** Everything it generates/saves is just a normal set you can open and edit. This makes it immediately portable to existing luas.
-- **Your saves win.** Anything you save under `jobs/<job>/` overrides auto sets.
+- **Your saves win.** Anything you save yourself overrides auto sets.
 - **Better than nothing.** Core five sets (idle, melee, fastcast, ws, + one magic family) carry 90% of play. Add detail later as you like.
