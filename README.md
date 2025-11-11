@@ -52,7 +52,7 @@ These are some of the most important ones:
 //gs c auto sets save <magic school> (elemental | enhancing | enfeebling | etc)
 ```
 
-You can also save a set for any ability or spell by name, and *autoloader* will use it automatically (precast for abilities, midcast for spells)
+You can also save a set for any ability or spell by name, and AutoLoader will use it automatically (precast for abilities, midcast for spells)
 ```
 //gs c auto sets save savage blade
 ```
@@ -60,7 +60,7 @@ Save those sets above, keep saving them as you get new gear, and create a couple
 
 **Keep your lua and just use *sets***
 
-The *autoloader-sets* library will give you the set mangement functionality independently of *autoloader*, so you can use it with Mote or whatever else.
+The *autoloader-sets* library will give you the set mangement functionality independently of AutoLoader, so you can use it with Mote or whatever else.
 An example of that would be:
 ```lua
 local autosets = require("autoloader-sets")
