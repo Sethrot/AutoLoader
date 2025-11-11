@@ -33,7 +33,7 @@ Whenever you change jobs, AutoLoader will immediately **scan your gear and gener
 This is an "Optimize Gear" button for FFXI, and it works for various situations like idle, melee/engaged, fastcast for casting, etc.
 However, the "Optimize Gear" button for FFXI is complicated, and it works about as well as you'd expect.
 
-*If you're a FFXI master tactician, please consider contributing to [libs/autoloader-codex.](https://github.com/NeatMachine/AutoLoader/blob/dev/data/Seloan_DRK.lua)*
+*If you're a FFXI master tactician, please consider contributing to [libs/autoloader-codex.](https://github.com/NeatMachine/AutoLoader/blob/main/libs/autoloader-codex.lua)*
 
 *SET_FUNCTIONS define the parameters used to calculate the optimal gear for each set. Most of it is AI generated for now.*
 
@@ -53,7 +53,7 @@ Right below are some of the most important ones if you choose to let the *autolo
 //gs c auto sets save <magic school> (elemental | enhancing | enfeebling | etc)
 ```
 
-You can also save a set for any ability or spell by name, and *autoloader-jobs* will use it automatically (precast for abilities, midcast for spells)
+You can also save a set for any ability or spell by name, and *autoloader* will use it automatically (precast for abilities, midcast for spells)
 ```
 //gs c auto sets save savage blade
 ```
