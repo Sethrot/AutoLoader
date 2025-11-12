@@ -28,6 +28,9 @@ include("autoloader")
 Check [data/Seloan_DRK.lua](https://github.com/NeatMachine/AutoLoader/blob/main/data/Seloan_DRK.lua) for a minimal job file.
 
 For intermediate, [data/Seloan_RDM.lua](https://github.com/NeatMachine/AutoLoader/blob/main/data/Seloan_RDM.lua) is my starter RDM file.
+
+Rename your file to YourCharacter_JOB
+
 <img width="602" height="156" alt="image" src="https://github.com/user-attachments/assets/cf337fe8-83a7-4f13-8885-245668815f0b" />
 
 
