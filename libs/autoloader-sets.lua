@@ -820,30 +820,35 @@ local function calculate_auto_sets(level, threshold, beam_k)
   if thr < 0 then thr = 0 end
 
   beam_k = tonumber(beam_k) or 40
+  if beam_k < 1 then beam_k = 1 end
 
-  local calc_map = codex.set_functions or codex.SET_FUNCTIONS or {}
-  if type(calc_map) ~= "table" or next(calc_map) == nil then
+  -- default: no pruning by dots unless level is a valid number
+  local max_dots = tonumber(level)
+  if not max_dots or max_dots < 0 then max_dots = math.huge end
+
+  -- Build a filtered COPY so we don't mutate the codex tables in place
+  local raw_map = codex.set_functions or codex.SET_FUNCTIONS or {}
+  if type(raw_map) ~= "table" or next(raw_map) == nil then
     log.error("No codex.set_functions/SET_FUNCTIONS found; aborting.")
     return {}
   end
-
-  for k in pairs(calc_map) do
-    if type(k) == "string" then
-      -- count dots: select(2, s:gsub("%.", "")) returns number of replacements
-      local dot_count = select(2, k:gsub("%.", ""))
-      if dot_count > level then
-        calc_map[k] = nil
+  local calc_map = {}
+  for k, fn in pairs(raw_map) do
+    if type(fn) == "function" then
+      local dots = (type(k) == "string") and select(2, k:gsub("%.", "")) or 0
+      if dots <= max_dots then
+        calc_map[k] = fn
       end
     end
   end
 
   local targets = {}
-  for key, fn in pairs(calc_map) do
-    if type(fn) == "function" then targets[#targets + 1] = key end
+  for key in pairs(calc_map) do
+    targets[#targets + 1] = key
   end
   table.sort(targets)
   if #targets == 0 then
-    log.error("No callable scorers in codex set_functions; aborting.")
+    log.error("No callable scorers in codex set_functions after filtering; aborting.")
     return {}
   end
 
@@ -854,22 +859,30 @@ local function calculate_auto_sets(level, threshold, beam_k)
   for _, rec in ipairs(items) do
     for slot_num, allowed in pairs(rec.slots or {}) do
       if allowed then
-        local t = slot_to_items[slot_num]; if not t then
-          t = {}; slot_to_items[slot_num] = t
-        end
+        local t = slot_to_items[slot_num]
+        if not t then t = {}; slot_to_items[slot_num] = t end
         t[#t + 1] = rec
       end
     end
   end
 
+  -- Deterministic candidate order within each slot (stability across runs)
+  for _, pool in pairs(slot_to_items) do
+    table.sort(pool, function(a, b)
+      local na, nb = a.name or "", b.name or ""
+      if na ~= nb then return na < nb end
+      return (a.id or 0) < (b.id or 0)
+    end)
+  end
+
   -- Slot mapping we’re optimizing now
   local slot_num_to_key = {
-    [4] = "head",
-    [5] = "body",
-    [6] = "hands",
-    [7] = "legs",
-    [8] = "feet",
-    [9] = "neck",
+    [4]  = "head",
+    [5]  = "body",
+    [6]  = "hands",
+    [7]  = "legs",
+    [8]  = "feet",
+    [9]  = "neck",
     [10] = "waist",
     [15] = "back",
     [11] = "left_ear",
@@ -889,7 +902,6 @@ local function calculate_auto_sets(level, threshold, beam_k)
       if type(v) == "number" then dst[k] = (dst[k] or 0) - v end
     end
   end
-
   local function eval_score(fn, totals)
     local ok, val = pcall(fn, totals)
     return (ok and (tonumber(val) or 0)) or 0
@@ -913,10 +925,10 @@ local function calculate_auto_sets(level, threshold, beam_k)
 
     -- Beam state (start from empty)
     local beam = { {
-      slots = {},
-      totals = {},
+      slots    = {},
+      totals   = {},
       used_ids = {},
-      score = eval_score(score_fn, {}), -- baseline
+      score    = eval_score(score_fn, {}), -- baseline
     } }
 
     for _, slot_num in ipairs(ordered_slots) do
@@ -974,8 +986,7 @@ local function calculate_auto_sets(level, threshold, beam_k)
     -- Final sparse-set prune: remove slots whose contribution < thr * max(|best.score|, G)
     do
       local target_floor = set_threshold * math.max(math.abs(best.score), G)
-      local slot_order = { "head", "body", "hands", "legs", "feet", "neck", "waist", "back", "left_ear", "right_ear",
-        "left_ring", "right_ring" }
+      local slot_order = { "head","body","hands","legs","feet","neck","waist","back","left_ear","right_ear","left_ring","right_ring" }
       for _, sk in ipairs(slot_order) do
         local it = best.slots[sk]
         if it then
@@ -1011,15 +1022,16 @@ local function calculate_auto_sets(level, threshold, beam_k)
     }
 
     log.debug(("Auto set (no-write) for %s built. score=%.3f, slots=%d"):
-    format(target_key, best.score, (function(t)
-      local n = 0
-      for _ in pairs(t) do n = n + 1 end
-      return n
-    end)(out_slots)))
+      format(target_key, best.score, (function(t)
+        local n = 0
+        for _ in pairs(t) do n = n + 1 end
+        return n
+      end)(out_slots)))
   end
 
   return results
 end
+
 
 -- Writes one auto-generated set to data/autoloader/auto/<Char>_<job>.<setkey>.lua
 -- Accepts either:
