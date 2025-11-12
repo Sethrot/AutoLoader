@@ -63,7 +63,7 @@ These are some of the most important ones:
 *//gs c auto sets save melee* (Equipped when you engage)
 *//gs c auto sets save fastcast* (Equipped before spell cast)
 *//gs c auto sets save ws* (Equipped before any WS that doesn't have its own set saved)
-*//gs c auto sets save <magic school>* (elemental | enhancing | enfeebling | etc) (Equipped during spell cast for that school, unless you save a set for the spell itself)
+*//gs c auto sets save <magic skill>* (elemental | enhancing | enfeebling | etc) (Equipped during spell cast for that school, unless you save a set for the spell itself)
 ```
 
 You can also save a set for any ability or spell by name, and AutoLoader will use it automatically (precast for abilities, midcast for spells)
