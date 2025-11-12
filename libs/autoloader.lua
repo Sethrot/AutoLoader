@@ -456,7 +456,7 @@ local function auto_utsusemi()
 end
 
 local function player_should_refresh_idle()
-    if autoloader.idle.refresh == true then
+    if autoloader.idle_refresh == true then
         return true
     end
 
