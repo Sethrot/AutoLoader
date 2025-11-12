@@ -26,7 +26,7 @@ Windower/addons/GearSwap/libs/
 If you're already familiar with how GearSwap works, add this line to the top of your existing lua:
 ```lua
 include("autoloader")
--- You can also choose to include only autoloader-sets for basic sets management.
+-- You can also choose to include only "autoloader-sets" for basic sets management.
 ```
 
 If you don't have any GearSwap luas yet:
