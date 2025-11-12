@@ -23,7 +23,7 @@ Windower/addons/GearSwap/libs/
 
 2) **Add one line to the top of your empty job file**
    
-If you're already familiar with how GearSwap works, add this line to the top of your existing lua:
+If you're already familiar with how GearSwap works, add this line to the top of an empty job file:
 ```lua
 include("autoloader")
 -- You can also choose to include only "autoloader-sets" for basic sets management.
