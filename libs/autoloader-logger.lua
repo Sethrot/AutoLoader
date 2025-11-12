@@ -2,27 +2,27 @@ require("Modes")
 
 local logger = {}
 
-local _VERBOSITY = { OFF = "off", ERROR = "error", INFO = "info", DEBUG = "debug" }
+logger.VERBOSITY = { OFF = "off", ERROR = "error", INFO = "info", DEBUG = "debug" }
 local _verbosity_level = {
-  [_VERBOSITY.OFF] = 0,
-  [_VERBOSITY.ERROR] = 1,
-  [_VERBOSITY.INFO] = 2,
-  [_VERBOSITY.DEBUG] = 3
+  [logger.VERBOSITY .OFF] = 0,
+  [logger.VERBOSITY .ERROR] = 1,
+  [logger.VERBOSITY .INFO] = 2,
+  [logger.VERBOSITY .DEBUG] = 3
 }
 local _verbosity_display = {
-  [_VERBOSITY.OFF] = "Off",
-  [_VERBOSITY.ERROR] = "ERROR",
-  [_VERBOSITY.INFO] = "",
-  [_VERBOSITY.DEBUG] = "Debug",
+  [logger.VERBOSITY .OFF] = "Off",
+  [logger.VERBOSITY .ERROR] = "ERROR",
+  [logger.VERBOSITY .INFO] = "",
+  [logger.VERBOSITY .DEBUG] = "Debug",
 }
 
 logger.options = {
   prefix = "[AutoLoader]",
-  verbosity = _VERBOSITY.INFO,
+  verbosity = logger.VERBOSITY.INFO,
   color = 207,
   max_chars_per_line = 80,
 }
-logger.mode = M { ["description"] = "Log", _VERBOSITY.OFF, _VERBOSITY.ERROR, _VERBOSITY.INFO, _VERBOSITY.DEBUG }
+logger.mode = M { ["description"] = "Log", logger.VERBOSITY .OFF, logger.VERBOSITY .ERROR, logger.VERBOSITY .INFO, logger.VERBOSITY .DEBUG }
 logger.mode:set(logger.options.verbosity)
 
 local function sticky_chat_color(s, color_index)
@@ -50,8 +50,8 @@ local function format_message(tag, msg, color)
 end
 
 function logger.info(msg, force)
-  if force or _verbosity_level[logger.mode.current] >= _verbosity_level[_VERBOSITY.INFO] then
-    format_message((force and "") or _verbosity_display[_VERBOSITY.INFO], msg, logger.options.color)
+  if force or _verbosity_level[logger.mode.current] >= _verbosity_level[logger.VERBOSITY .INFO] then
+    format_message((force and "") or _verbosity_display[logger.VERBOSITY .INFO], msg, logger.options.color)
   end
 end
 
@@ -63,15 +63,15 @@ local function _callsite(skip)
   return name, where, info.namewhat or "?", info.what or "?"
 end
 function logger.debug(msg)
-  if _verbosity_level[logger.mode.current] >= _verbosity_level[_VERBOSITY.DEBUG] then
+  if _verbosity_level[logger.mode.current] >= _verbosity_level[logger.VERBOSITY .DEBUG] then
     local name, where = _callsite(1)
-    format_message(_verbosity_display[_VERBOSITY.DEBUG], name .. ": ".. msg, 161)
+    format_message(_verbosity_display[logger.VERBOSITY .DEBUG], name .. ": ".. msg, 161)
   end
 end
 
 function logger.error(msg)
-  if _verbosity_level[logger.mode.current] >= _verbosity_level[_VERBOSITY.ERROR] then
-    local ok, err = format_message(_verbosity_display[_VERBOSITY.ERROR], msg, 39)
+  if _verbosity_level[logger.mode.current] >= _verbosity_level[logger.VERBOSITY .ERROR] then
+    local ok, err = format_message(_verbosity_display[logger.VERBOSITY .ERROR], msg, 39)
     if not ok then
       print(err)
     end
