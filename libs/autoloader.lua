@@ -2,32 +2,32 @@ local autoloader = {}
 
 require("Modes")
 require("lists")
-local res                            = require("resources")
+local res                    = require("resources")
 
-local utils                          = require("autoloader-utils")
-local sets                           = require("autoloader-sets")
-local codex                          = require("autoloader-codex")
-local log                            = require("autoloader-logger")
+local utils                  = require("autoloader-utils")
+local sets                   = require("autoloader-sets")
+local codex                  = require("autoloader-codex")
+local log                    = require("autoloader-logger")
 
-autoloader.default_weapon_id         = 1
-autoloader.lockstyle                 = nil
-autoloader.auto_echo_drops           = false
-autoloader.auto_remedy               = false
-autoloader.idle_refresh              = nil
-autoloader.auto_movement             = false
-autoloader.idle_mode                 = "default"
-autoloader.melee_mode                = "default"
-autoloader.magic_mode                = "default"
-autoloader.use_auto_sets             = true
+autoloader.default_weapon_id = 1
+autoloader.lockstyle         = nil
+autoloader.auto_echo_drops   = false
+autoloader.auto_remedy       = false
+autoloader.idle_refresh      = nil
+autoloader.auto_movement     = false
+autoloader.idle_mode         = "default"
+autoloader.melee_mode        = "default"
+autoloader.magic_mode        = "default"
+autoloader.use_auto_sets     = true
 
-local _idle_mode                     = M { ["description"] = "Idle", "default", "dt", "mdt" }
-local _melee_mode                    = M { ["description"] = "Melee", "default", "acc", "dt", "mdt", "sb", "off" }
-local _magic_mode                    = M { ["description"] = "Magic", "default", "acc", "mb" }
-local _auto_movement_mode            = M { ["description"] = "Movement", "off", "on" }
+local _idle_mode             = M { ["description"] = "Idle", "default", "dt", "mdt" }
+local _melee_mode            = M { ["description"] = "Melee", "default", "acc", "dt", "mdt", "sb", "off" }
+local _magic_mode            = M { ["description"] = "Magic", "default", "acc", "mb" }
+local _auto_movement_mode    = M { ["description"] = "Movement", "off", "on" }
 
-local _weapons                       = {}
-local _current_weapon_id             = autoloader.default_weapon_id
-local _keybinds                      = {}
+local _weapons               = {}
+local _current_weapon_id     = autoloader.default_weapon_id
+local _keybinds              = {}
 
 
 local _mode_display_names = {
@@ -48,6 +48,33 @@ end
 function autoloader.register_keybind(key, bind)
     if key and type(key) == "string" and bind and type(bind) == "string" then
         _keybinds[key] = bind
+    end
+end
+
+function autoloader.equip_clean(set)
+    if set then
+        local current_set = player.equipment
+        if current_set then
+            -- Juggle rings and earrings if necessary
+            if current_set.left_ring == set.right_ring then
+                set.right_ring = set.left_ring
+                set.left_ring = current_set.left_ring
+            end
+            if current_set.right_ring == set.left_ring then
+                set.left_ring = set.right_ring
+                set.right_ring = current_set.right_ring
+            end
+            if current_set.left_earring == set.right_earring then
+                set.right_earring = set.left_earring
+                set.left_earring = current_set.left_earring
+            end
+            if current_set.right_earring == set.left_earring then
+                set.left_earring = set.right_earring
+                set.right_earring = current_set.right_earring
+            end
+        end
+
+        equip(set)
     end
 end
 
@@ -102,7 +129,7 @@ local function movement_poll(now)
         if player.status and player.status:lower() == "idle" then
             if (player_x ~= _last_x or player_y ~= _last_y) and not moving then
                 moving = true
-                equip(sets.get(codex.CORE_SETS.movement.default))
+                autoloader.equip_clean(sets.get(codex.CORE_SETS.movement.default))
             elseif player_x == _last_x and player_y == _last_y and moving then
                 moving = false
                 autoloader.status_refresh()
@@ -112,6 +139,7 @@ local function movement_poll(now)
         _last_x, _last_y = player_x, player_y
     end
 end
+
 
 local _polling_functions = {
     movement = {
@@ -419,7 +447,8 @@ local function utsusemi_ichi_cancel_shadow()
     for i, name in ipairs(COPY_IMAGE_NAMES) do
         if buffactive[name] then
             cancelled = true
-            windower.send_command("input /cancel " .. tostring(COPY_IMAGE_IDS[i]) .. ";wait 0.4;/ma 'Utsusemi: Ichi' <me>")
+            windower.send_command("input /cancel " ..
+                tostring(COPY_IMAGE_IDS[i]) .. ";wait 0.4;/ma 'Utsusemi: Ichi' <me>")
             log.info("Utsusemi: Ichi => Cancel Shadows => Utsusemi: Ichi")
             break
         end
@@ -435,8 +464,13 @@ local function auto_utsusemi()
     local ni_recast   = (utsu_ni_id and recasts[utsu_ni_id]) or 9999
     local ichi_recast = (utsu_ichi_id and recasts[utsu_ichi_id]) or 9999
 
-    local shadows = 0
-    for i, name in ipairs(COPY_IMAGE_NAMES) do if buffactive[name] then shadows = i break end end
+    local shadows     = 0
+    for i, name in ipairs(COPY_IMAGE_NAMES) do
+        if buffactive[name] then
+            shadows = i
+            break
+        end
+    end
 
     if shadows >= 3 then
         log.info("3+ Shadows, Utsusemi Skipped.")
@@ -465,17 +499,8 @@ end
 
 -- Helper: fetch the res.items entry for a player.equipment.* table
 local function resolve_item(entry)
-    if type(entry) ~= 'table' then return nil end
-    local name = tostring(entry.name or ''):gsub('^%s+', ''):gsub('%s+$', '')
-    if name == '' or name:lower() == 'empty' then return nil end
-
-    -- Prefer id when present
-    if entry.id and res.items[entry.id] then
-        return res.items[entry.id]
-    end
-
-    -- Fallback by English name fields used in resources
-    return res.items:with('en', name) or res.items:with('enl', name) or nil
+    if entry == '' or entry:lower() == 'empty' then return nil end
+    return res.items:with('en', entry) or res.items:with('enl', entry) or nil
 end
 
 local function player_is_dw()
@@ -502,7 +527,6 @@ local function player_is_dw()
             end
         end
     end
-
 
     -- Case 1: string-keyed slots table
     if slots.Main or slots.main then return true end
@@ -682,11 +706,12 @@ function status_change(new, old)
     log.debug(("Status %s -> %s"):format(old, new))
 
     if new == "Engaged" and _melee_mode.current ~= "off" then
-        equip(sets.build_set(get_ordered_mode_set_names(_melee_mode)))
+        log.dump(sets.build_set(get_ordered_mode_set_names(_melee_mode)))
+        autoloader.equip_clean(sets.build_set(get_ordered_mode_set_names(_melee_mode)))
     elseif new == "Resting" then
-        equip(sets.build_set({ "idle.rest", "idle.resting", "rest", "resting" }))
+        autoloader.equip_clean(sets.build_set({ "idle.rest", "idle.resting", "rest", "resting" }))
     else
-        equip(sets.build_set(get_ordered_mode_set_names(_idle_mode)))
+        autoloader.equip_clean(sets.build_set(get_ordered_mode_set_names(_idle_mode)))
     end
 
     utils.call_hook("after_status_change", autoloader.stub_after_status_change, new, old)
@@ -708,7 +733,7 @@ function precast(spell)
     local terminate = utils.call_hook("before_precast", autoloader.stub_before_precast, spell)
     if terminate then return end
 
-    equip(sets.build_set(get_ordered_precast_set_names(spell)))
+    autoloader.equip_clean(sets.build_set(get_ordered_precast_set_names(spell)))
 
     utils.call_hook("after_precast", autoloader.stub_after_precast, spell)
 end
@@ -721,7 +746,7 @@ function midcast(spell)
     local terminate = utils.call_hook("before_midcast", autoloader.stub_before_midcast, spell)
     if terminate then return end
 
-    equip(sets.build_set(get_ordered_midcast_set_names(spell)))
+    autoloader.equip_clean(sets.build_set(get_ordered_midcast_set_names(spell)))
 
     utils.call_hook("after_midcast", autoloader.stub_after_midcast, spell)
 end
@@ -869,7 +894,7 @@ Topic('weapon', {
 
 Topic('movement', {
     title    = "movement",
-    desc     = "Enable or disable polling for automatic movement speed equipment.",
+    desc     = "Enable or disable polling for automatic movement speed autoloader.equip_cleanment.",
     usage    = { "movement", "movement <mode>" },
     params   = { "<mode> ::= on | off" },
     examples = { "gs c a movement on", "gs c a movement off" },
