@@ -23,7 +23,6 @@ logger.options = {
   max_chars_per_line = 80,
 }
 logger.mode = M { ["description"] = "Log", _VERBOSITY.OFF, _VERBOSITY.ERROR, _VERBOSITY.INFO, _VERBOSITY.DEBUG }
-logger.mode:set(logger.options.verbosity)
 
 local function sticky_chat_color(s, color_index)
   if not s or s == '' then return '' end
