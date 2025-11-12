@@ -25,7 +25,7 @@ Windower/addons/GearSwap/libs/
 ```lua
 include("autoloader") 
 ```
-Check [data/Seloan_DRK.lua](https://github.com/NeatMachine/AutoLoader/blob/main/data/Seloan_DRK.lua) for a minimal job file.
+Check [data/Seloan_DRK.lua](https://github.com/NeatMachine/AutoLoader/blob/main/data/Seloan_DRK.lua) for a minimal job file, which is a good place to start.
 
 For intermediate, [data/Seloan_RDM.lua](https://github.com/NeatMachine/AutoLoader/blob/main/data/Seloan_RDM.lua) is my starter RDM file.
 
