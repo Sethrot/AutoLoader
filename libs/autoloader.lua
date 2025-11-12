@@ -456,11 +456,11 @@ local function auto_utsusemi()
 end
 
 local function player_should_refresh_idle()
-    if autoloader.idle_refresh == false or autoloader.idle_refresh == true then
-        return autoloader.idle_refresh
-    else
-        return player.mp > 200
+    if autoloader.idle.refresh == true then
+        return true
     end
+
+    return false
 end
 
 -- Helper: fetch the res.items entry for a player.equipment.* table
