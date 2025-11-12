@@ -22,6 +22,7 @@ Windower/addons/GearSwap/libs/
 <img width="620" height="420" alt="image" src="https://github.com/user-attachments/assets/2735a6ec-714a-4fb2-8026-6e722e5241e3" />
 
 2) **Add one line to the top of your empty job file**
+   
 If you're already familiar with how GearSwap works, add this line to the top of your existing lua:
 ```lua
 include("autoloader") 
