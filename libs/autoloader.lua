@@ -557,7 +557,7 @@ local function get_ordered_mode_set_names(mode)
             set_names:append(normalized_base .. "." .. normalized_current .. ".weapon" .. tostring(_current_weapon_id))
         end
     end
-
+    log.dump(set_names)
     return set_names
 end
 
@@ -658,7 +658,7 @@ function get_sets()
     end
 
     if autoloader.use_auto_sets then
-        sets.generate_auto_sets(0.05, 32, 0.1)
+        sets.generate_auto_sets(1, 0.05, 32, 0.1)
     end
 
     _weapons = sets.get_weapons()

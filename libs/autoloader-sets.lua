@@ -813,7 +813,7 @@ local function find_available_equipment()
   return out
 end
 
-local function calculate_auto_sets(threshold, beam_k)
+local function calculate_auto_sets(level, threshold, beam_k)
   -- threshold is a percentage. 10 == 10% (also accepts 0.10 == 10%).
   local thr = tonumber(threshold) or 0
   if thr > 1 then thr = thr / 100 end
@@ -825,6 +825,16 @@ local function calculate_auto_sets(threshold, beam_k)
   if type(calc_map) ~= "table" or next(calc_map) == nil then
     log.error("No codex.set_functions/SET_FUNCTIONS found; aborting.")
     return {}
+  end
+
+  for k in pairs(calc_map) do
+    if type(k) == "string" then
+      -- count dots: select(2, s:gsub("%.", "")) returns number of replacements
+      local dot_count = select(2, k:gsub("%.", ""))
+      if dot_count > level then
+        calc_map[k] = nil
+      end
+    end
   end
 
   local targets = {}
@@ -1107,9 +1117,9 @@ local function write_auto_set(setkey, result)
   return true, path
 end
 
-function sets.generate_auto_sets(threshold, beam_k, spacing_s)
+function sets.generate_auto_sets(level, threshold, beam_k, spacing_s)
   -- Build the sets first (sync)
-  local auto_sets = calculate_auto_sets(threshold, beam_k)
+  local auto_sets = calculate_auto_sets(level, threshold, beam_k)
   if type(auto_sets) ~= "table" or next(auto_sets) == nil then
     log.error("generate_auto_sets: calculate_auto_sets returned no results.")
     return false, auto_sets
