@@ -5,8 +5,6 @@ AutoLoader also automatically generates sets from the gear you already own.
 
 AutoLoader lives in `GearSwap/libs` and runs when your job file loads.
 
-<img width="620" height="420" alt="image" src="https://github.com/user-attachments/assets/2735a6ec-714a-4fb2-8026-6e722e5241e3" />
-
 ---
 
 ## Quick Start
@@ -20,6 +18,8 @@ Windower/addons/GearSwap/libs/
   autoloader-utils.lua
   autoloader-logger.lua
 ```
+
+<img width="620" height="420" alt="image" src="https://github.com/user-attachments/assets/2735a6ec-714a-4fb2-8026-6e722e5241e3" />
 
 2) **Add one line to the top of your empty job file**
 ```lua
