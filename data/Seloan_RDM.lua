@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: BSD-3-Clause
+-- Copyright (c) 2025 NeatMachine
+
 -- Seloan_RDM.lua
 -- Basic Red Mage (RDM) configuration file with AutoLoader support
 local autoloader = require("autoloader")
