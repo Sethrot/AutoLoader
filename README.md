@@ -86,6 +86,9 @@ get_sets()
 end
 ```
 
+You'll then just need to route your "sets" command to the sets lib, like:
+autosets.handle_sets_command
+
 ***More AutoLoader details**
 
 AutoLoader makes heavy use of GearSwap's set combinations to load relevant sets in order of specificity.
