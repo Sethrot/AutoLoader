@@ -16,8 +16,6 @@ local log                    = require("autoloader-logger")
 
 autoloader.default_weapon_id   = 1
 autoloader.lockstyle           = nil
-autoloader.auto_echo_drops     = false
-autoloader.auto_remedy         = false
 autoloader.idle_refresh        = nil
 autoloader.auto_movement       = false
 autoloader.idle_mode           = "default"
@@ -425,74 +423,6 @@ function autoloader.status_refresh()
     status_change(player.status, player.status)
 end
 
-local function auto_echo_drops(spell)
-    if spell.action_type == "Magic" and buffactive["Silence"] or buffactive["silence"] then
-        cancel_spell()
-        windower.send_command("input /item 'Echo Drops' <me>;wait 1.2;/ma " .. spell.english .. " " .. spell.target)
-        log.info(("%s (Silenced) => Echo Drops => %s"):format(spell.english, spell.english))
-        return true
-    end
-end
-local function auto_remedy(spell)
-    if buffactive["Paralyze"] or buffactive["paralyze"] then
-        cancel_spell()
-        windower.send_command("input /item 'Remedy' <me>;wait 1.2;/ma " .. spell.english .. " " .. spell.target)
-        log.info(("%s (Paralyzed) => Remedy => %s"):format(spell.english, spell.english))
-        return true
-    end
-end
-
-local utsu_ni_id       = autoloader.utsusemi_ni_id or autoloader.get_spell_id("Utsusemi: Ni")
-local utsu_ichi_id     = autoloader.utsusemi_ichi_id or autoloader.get_spell_id("Utsusemi: Ichi")
-local COPY_IMAGE_NAMES = { 'Copy Image', 'Copy Image (2)', 'Copy Image (3)', 'Copy Image (4)' }
-local COPY_IMAGE_IDS   = { 66, 444, 445, 446 }
-local function utsusemi_ichi_cancel_shadow()
-    local cancelled = false
-    for i, name in ipairs(COPY_IMAGE_NAMES) do
-        if buffactive[name] then
-            cancelled = true
-            windower.send_command("input /cancel " ..
-                tostring(COPY_IMAGE_IDS[i]) .. ";wait 0.4;/ma 'Utsusemi: Ichi' <me>")
-            log.info("Utsusemi: Ichi => Cancel Shadows => Utsusemi: Ichi")
-            break
-        end
-    end
-    if not cancelled then
-        windower.send_command("input /ma 'Utsusemi: Ichi' <me>")
-        log.info("Utsusemi: Ichi")
-    end
-end
-
-local function auto_utsusemi()
-    local recasts     = windower.ffxi.get_spell_recasts() or {}
-    local ni_recast   = (utsu_ni_id and recasts[utsu_ni_id]) or 9999
-    local ichi_recast = (utsu_ichi_id and recasts[utsu_ichi_id]) or 9999
-
-    local shadows     = 0
-    for i, name in ipairs(COPY_IMAGE_NAMES) do
-        if buffactive[name] then
-            shadows = i
-            break
-        end
-    end
-
-    if shadows >= 3 then
-        log.info("3+ Shadows, Utsusemi Skipped.")
-        return
-    end
-
-    if ni_recast == 0 then
-        windower.send_command("input /ma 'Utsusemi: Ni' <me>")
-        log.info("Utsusemi: Ni")
-        return
-    end
-
-    if ichi_recast == 0 then
-        utsusemi_ichi_cancel_shadow()
-        return
-    end
-end
-
 local function player_should_refresh_idle()
     if autoloader.idle_refresh == true then
         return true
@@ -725,14 +655,6 @@ before_precast = autoloader.stub_before_precast
 autoloader.stub_after_precast = function() end
 after_precast = autoloader.stub_after_precast
 function precast(spell)
-    if autoloader.auto_echo_drops then
-        local terminate = auto_echo_drops(spell)
-        if terminate then return end
-    end
-    if autoloader.auto_remedy then
-        local terminate = auto_remedy(spell)
-        if terminate then return end
-    end
     local terminate = utils.call_hook("before_precast", autoloader.stub_before_precast, spell)
     if terminate then return end
 
@@ -963,8 +885,6 @@ function self_command(cmd)
             handle_weapon_command(rest2)
         elseif a2 == "movement" then
             handle_movement_command(rest2)
-        elseif a2 == "utsusemi" then
-            auto_utsusemi()
         elseif a2 == "help" then
             handle_help_command(rest2)
         elseif a2 == "status_refresh" then
