@@ -9,16 +9,17 @@ local sets                   = require("autoloader-sets")
 local codex                  = require("autoloader-codex")
 local log                    = require("autoloader-logger")
 
-autoloader.default_weapon_id = 1
-autoloader.lockstyle         = nil
-autoloader.auto_echo_drops   = false
-autoloader.auto_remedy       = false
-autoloader.idle_refresh      = nil
-autoloader.auto_movement     = false
-autoloader.idle_mode         = "default"
-autoloader.melee_mode        = "default"
-autoloader.magic_mode        = "default"
-autoloader.use_auto_sets     = true
+autoloader.default_weapon_id   = 1
+autoloader.lockstyle           = nil
+autoloader.auto_echo_drops     = false
+autoloader.auto_remedy         = false
+autoloader.idle_refresh        = nil
+autoloader.auto_movement       = false
+autoloader.idle_mode           = "default"
+autoloader.melee_mode          = "default"
+autoloader.magic_mode          = "default"
+autoloader.use_auto_sets       = true
+autoloader.auto_sets_threshold = 0.0075
 
 local _idle_mode             = M { ["description"] = "Idle", "default", "dt", "mdt" }
 local _melee_mode            = M { ["description"] = "Melee", "default", "acc", "dt", "mdt", "sb", "off" }
@@ -682,7 +683,7 @@ function get_sets()
     end
 
     if autoloader.use_auto_sets then
-        sets.generate_auto_sets(1, 0.05, 32, 0.1)
+        sets.generate_auto_sets(1, autoloader.auto_sets_threshold, 32, 0.5)
     end
 
     _weapons = sets.get_weapons()
