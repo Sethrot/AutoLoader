@@ -87,7 +87,10 @@ end
 ```
 
 You'll then just need to route your "sets" command to the sets lib, like:
-autosets.handle_sets_command
+```lua
+self_command(cmd)
+autosets.handle_sets_command(cmd_after_sets_keyword)
+```
 
 ***More AutoLoader details**
 
