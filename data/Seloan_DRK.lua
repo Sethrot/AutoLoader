@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: BSD-3-Clause
+-- Copyright (c) 2025 NeatMachine
+
 -- Seloan_DRK.lua
 -- Minimal Dark Knight (DRK) configuration file with AutoLoader support
 

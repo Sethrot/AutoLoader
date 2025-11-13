@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: BSD-3-Clause
+-- Copyright (c) 2025 NeatMachine
+
 local log = require("autoloader-logger")
 local utils = require("autoloader-utils")
 local codex = require("autoloader-codex")
@@ -73,7 +76,6 @@ local function get_exported_file_name(set_name)
 end
 
 local function compile_table_expr(table_src, chunkname)
-  -- returns a function that when called yields the table
   local code = "return " .. table_src
   if _G.loadstring then
     local fn, err = loadstring(code, chunkname or "@AutoLoader:table")
@@ -106,7 +108,6 @@ local function load_set(abs_filename)
   local normalized_content = src:lower()
   local anchor_pos, label
 
-  -- Prefer a top-level 'return { ... }'
   anchor_pos = normalized_content:find("return%s*%{")
   if anchor_pos then
     label = "return"
@@ -162,7 +163,6 @@ end
 function sets.build_set(...)
   local args = { ... }
 
-  -- convenience: allow a single table { "a","b","c" }
   if #args == 1 and type(args[1]) == "table" then
     args = args[1]
   end
@@ -204,7 +204,7 @@ function sets.get(name, use_auto_sets)
   -- Return cached set
   if _cache and _cache[name] then return _cache[name] end
 
-  -- Try to load set from current job/subjob path
+  -- Try to load set from current job path
   local job_file = utils.join_paths(get_job_path(), filename)
   local set = windower.file_exists(job_file) and load_set(job_file)
   if set then
@@ -693,9 +693,6 @@ local function parse_description(item, ext)
   }
 end
 
--- ---------------------------------------------------------------------------
--- extdata augments
--- ---------------------------------------------------------------------------
 local function get_augments_from_entry(entry)
   if not ok_ext or not entry or not entry.extdata then return nil end
   local ok, ex = pcall(extdata.decode, entry)
@@ -709,9 +706,6 @@ local function get_augments_from_entry(entry)
   return nil
 end
 
--- ---------------------------------------------------------------------------
--- inventory scan
--- ---------------------------------------------------------------------------
 local function get_available_items()
   local items = windower.ffxi.get_items() or {}
   local rows = {}
@@ -814,7 +808,6 @@ local function find_available_equipment()
 end
 
 local function calculate_auto_sets(level, threshold, beam_k)
-  -- threshold is a percentage. 10 == 10% (also accepts 0.10 == 10%).
   local thr = tonumber(threshold) or 0
   if thr > 1 then thr = thr / 100 end
   if thr < 0 then thr = 0 end
@@ -866,7 +859,6 @@ local function calculate_auto_sets(level, threshold, beam_k)
     end
   end
 
-  -- Deterministic candidate order within each slot (stability across runs)
   for _, pool in pairs(slot_to_items) do
     table.sort(pool, function(a, b)
       local na, nb = a.name or "", b.name or ""
@@ -875,7 +867,6 @@ local function calculate_auto_sets(level, threshold, beam_k)
     end)
   end
 
-  -- Slot mapping we’re optimizing now
   local slot_num_to_key = {
     [4]  = "head",
     [5]  = "body",
@@ -1007,7 +998,6 @@ local function calculate_auto_sets(level, threshold, beam_k)
       end
     end
 
-    -- Build a compact, writer-friendly payload
     local out_slots, out_ids = {}, {}
     for sk, it in pairs(best.slots) do
       out_slots[sk] = it.name
@@ -1033,11 +1023,6 @@ local function calculate_auto_sets(level, threshold, beam_k)
 end
 
 
--- Writes one auto-generated set to data/autoloader/auto/<Char>_<job>.<setkey>.lua
--- Accepts either:
---   result = { slots = { head="...", ... }, ids={...}, totals={...}, score=number }
--- or a plain slot table:
---   result = { head="...", body="...", ... }
 local function write_auto_set(setkey, result)
   if not setkey or result == nil then
     log.error("write_auto_set: setkey and result are required")

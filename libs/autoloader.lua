@@ -1,3 +1,8 @@
+-- SPDX-License-Identifier: BSD-3-Clause
+-- Copyright (c) 2025 NeatMachine
+
+
+
 local autoloader = {}
 
 require("Modes")
@@ -167,7 +172,6 @@ do
     local function ensure_handler()
         if running then return end
 
-        -- Replace the poller handler with this version
         local function handler()
             local now = utils.now()
             for key, t in pairs(tasks) do
@@ -359,7 +363,7 @@ local function cycle_weapon()
         end
     end
 
-    table.sort(ids) -- e.g. {1, 4, 9}
+    table.sort(ids)
 
     -- Need at least two to make “next” mean anything
     if #ids < 2 then return end
@@ -398,7 +402,6 @@ local function cycle_weapon()
 
     local next_id = ids[next_index]
     if next_id then
-        -- Second arg = announce; your set_weapon signature expects that
         autoloader.set_weapon(next_id, true)
     end
 end
@@ -498,7 +501,6 @@ local function player_should_refresh_idle()
     return false
 end
 
--- Helper: fetch the res.items entry for a player.equipment.* table
 local function resolve_item(entry)
     if entry == '' or entry:lower() == 'empty' then return nil end
     return res.items:with('en', entry) or res.items:with('enl', entry) or nil
@@ -519,7 +521,7 @@ local function player_is_dw()
     local slots = item.slots
     if type(slots) ~= 'table' then return false end
 
-    -- Optional hard exclusion: if resources expose skill, exclude known shield skill
+    -- If resources expose skill, exclude known shield skill
     if item.skill and res.skills then
         for sid, sk in pairs(res.skills) do
             local nm = (sk.en or sk.english or sk.name)

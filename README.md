@@ -21,6 +21,8 @@ Windower/addons/GearSwap/libs/
 
 <img width="620" height="420" alt="image" src="https://github.com/user-attachments/assets/2735a6ec-714a-4fb2-8026-6e722e5241e3" />
 
+**Only want sets management without the full autoloader system? Skip to the section *Keep your lua and just use sets***
+
 2) **Add one line to the top of your empty job file**
    
 If you're already familiar with how GearSwap works, add this line to the top of an empty job file:
@@ -59,11 +61,11 @@ The primary reason AutoLoader was created is because I'm a poorly equipped casua
 
 These are some of the most important ones:
 ```
-*//gs c auto sets save idle* (This is equipped when your status changes to disengaged)
-*//gs c auto sets save melee* (Equipped when you engage)
-*//gs c auto sets save fastcast* (Equipped before spell cast)
-*//gs c auto sets save ws* (Equipped before any WS that doesn't have its own set saved)
-*//gs c auto sets save <magic skill>* (elemental | enhancing | enfeebling | etc) (Equipped during spell cast for that school, unless you save a set for the spell itself)
+//gs c auto sets save idle (This is equipped when your status changes to disengaged)
+//gs c auto sets save melee (Equipped when you engage)
+//gs c auto sets save fastcast (Equipped before spell cast)
+//gs c auto sets save ws (Equipped before any WS that doesn't have its own set saved)
+//gs c auto sets save <magic skill> (elemental | enhancing | enfeebling | etc) (Equipped during spell cast for that school, unless you save a set for the spell itself)
 ```
 
 You can also save a set for any ability or spell by name, and AutoLoader will use it automatically (precast for abilities, midcast for spells)
@@ -86,9 +88,15 @@ get_sets()
 end
 ```
 
-***More AutoLoader details**
+You'll then just need to route your "sets" command to the sets lib, like:
+```lua
+self_command(cmd)
+autosets.handle_sets_command(cmd_after_sets_keyword)
+```
 
-AutoLoader makes heavy use of GearSwap's set combinations to load relevant sets in order of specificity.
+**More AutoLoader details**
+
+AutoLoader (Full) makes heavy use of GearSwap's set combinations to load relevant sets in order of specificity.
 
 Whenever you cast Fire IV, AutoLoader does, in order:
 ```

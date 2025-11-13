@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: BSD-3-Clause
+-- Copyright (c) 2025 NeatMachine
+
 require("lists")
 
 local utils = {}
@@ -57,7 +60,6 @@ function utils.join_paths(a, b)
 end
 
 function utils.slice_balanced_braces(s, open_pos)
-  -- returns substring from the opening '{' at open_pos through its matching '}'
   local i, n = open_pos, #s
   local depth = 0
   local in_s, in_d = false, false
@@ -91,9 +93,7 @@ function utils.slice_balanced_braces(s, open_pos)
         in_d = false
       end
     else
-      -- not in string/comment
       if c2 == "--" then
-        -- long comment?
         local c4 = (i + 3 <= n) and s:sub(i + 2, i + 3) or ""
         if c4 == "[[" then
           in_block_comment = true
@@ -147,7 +147,6 @@ function utils.ensure_dir(path)
   path = tostring(path or ''):gsub('\\', '/'):gsub('/+$', '')
   if path == '' then return false, 'empty path' end
 
-  -- seed prefix for absolute paths (C:/..., /..., etc.)
   local prefix = ''
   local drive = path:match('^([A-Za-z]:)/')
   if drive then
@@ -252,8 +251,8 @@ function utils.move_file(src, dst)
 end
 
 function utils.wait_for_file(path, timeout_s, poll_s, on_found, on_timeout)
-  local deadline = utils.now() + math.max(tonumber(timeout_s) or 0, 1.0)   -- min 1.0s
-  local interval = math.max(tonumber(poll_s) or 0, 0.10)             -- min 0.10s
+  local deadline = utils.now() + math.max(tonumber(timeout_s) or 0, 1.0)
+  local interval = math.max(tonumber(poll_s) or 0, 0.10)
 
   local function step()
     if windower and windower.file_exists and windower.file_exists(path) then
