@@ -94,9 +94,9 @@ self_command(cmd)
 autosets.handle_sets_command(cmd_after_sets_keyword)
 ```
 
-***More AutoLoader details**
+**More AutoLoader details**
 
-AutoLoader makes heavy use of GearSwap's set combinations to load relevant sets in order of specificity.
+AutoLoader (Full) makes heavy use of GearSwap's set combinations to load relevant sets in order of specificity.
 
 Whenever you cast Fire IV, AutoLoader does, in order:
 ```
