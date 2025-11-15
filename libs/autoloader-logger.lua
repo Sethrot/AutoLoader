@@ -21,7 +21,7 @@ local _verbosity_display = {
 
 logger.options = {
   prefix = "[AutoLoader]",
-  verbosity = logger.VERBOSITY.DEBUG,
+  verbosity = logger.VERBOSITY.INFO,
   color = 207,
   max_chars_per_line = 80,
 }
