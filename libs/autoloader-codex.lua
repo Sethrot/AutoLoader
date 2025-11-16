@@ -1,6 +1,8 @@
 -- SPDX-License-Identifier: BSD-3-Clause
 -- Copyright (c) 2025 NeatMachine
 
+local res = require("resources")
+
 local codex = {}
 
 codex.CORE_SETS = {
@@ -92,10 +94,47 @@ codex.CASTING_SETS = {
         default = "divine",
         skill = "divine.skill",
         nuke = "divine.nuke"
+    },
+    blue       = {
+        default = "blue",
+        physical = "blue.physical",
+        physical_acc = "blue.physical_acc",
+        physical_str = "blue.physical_str",
+        physical_dex = "blue.physical_dex",
+        physical_vit = "blue.physical_vit",
+        physical_agi = "blue.physical_agi",
+        physical_int = "blue.physical_int",
+        physical_mnd = "blue.physical_mnd",
+        physical_chr = "blue.physical_chr",
+        physical_hp = "blue.physical_hp",
+        magical = "blue.magical",
+        magical_mnd = "blue.magical_mnd",
+        magical_vit = "blue.magical_vit",
+        magical_chr = "blue.magical_chr",
+        magical_agi = "blue.magical_agi",
+        magical_str = "blue.magical_str",
+        magical_int = "blue.magical_int",
+        magical_dex = "blue.magical_dex",
+        magical_macc = "blue.magical_macc",
+        magical_breath = "blue.magical_breath",
+        magical_stun = "blue.magical_stun",
+        magical_healing = "blue.magical_healing",
+        magical_skill_buff = "blue.magical_skill_buff",
+        magical_buff = "blue.magical_buff",
     }
 }
 
-codex.INSTANT_SPELLS = { ["Stun"] = true }
+codex.INSTANT_SPELLS = {
+    ["Stun"] = true,
+    ["Blitzstrahl"] = true,
+    ["Frypan"] = true,
+    ["Butt"] = true,
+    ["Sudden Lunge"] = true,
+    ["Tail Slap"] = true,
+    ["Temporal Shift"] = true,
+    ["Thunderbolt"] = true,
+    ["Whirl of Rage"] = true,
+}
 
 codex.NON_REFRESHABLE_SPELLS = {
     ["Stoneskin"] = true,
@@ -512,7 +551,7 @@ codex.PET_PREFIXES = { "Pet:", "Pet", "Avatar", "Wyvern", "Automaton", "Luopan" 
 -- https://github.com/Icydeath/ffxi-addons/blob/master/checkparam
 codex.KNOWN_ENHANCED_BY_ID = {
     [10392] = { [codex.STAT.cursna] = 10 },        -- Malison Medallion
-    [10393] = { [codex.STAT.cursna]  = 15 },        -- Debilis Medallion
+    [10393] = { [codex.STAT.cursna] = 15 },        -- Debilis Medallion
     [10394] = { [codex.STAT.fast_cast] = 5 },      -- Orunmila's Torque
     [10752] = { [codex.STAT.fast_cast] = 2 },      -- Prolix Ring
     [11037] = { [codex.STAT.stoneskin] = 10 },     -- Earthcry Earring
@@ -530,8 +569,8 @@ codex.KNOWN_ENHANCED_BY_ID = {
     [21062] = { [codex.STAT.divine_benison] = 3 }, -- Yagrush119
     [21063] = { [codex.STAT.divine_benison] = 3 }, -- Yagrush119+
     [21078] = { [codex.STAT.divine_benison] = 3 }, -- Yagrush119AG
-    [27279] = { [codex.STAT.pdt] = 6 },           -- Eri. Leg Guards
-    [27280] = { [codex.STAT.pdt] = 7 },           -- Eri. Leg Guards +1
+    [27279] = { [codex.STAT.pdt] = 6 },            -- Eri. Leg Guards
+    [27280] = { [codex.STAT.pdt] = 7 },            -- Eri. Leg Guards +1
     [28197] = { [codex.STAT.snapshot] = 9 },       -- Nahtirah Trousers
     [28637] = { [codex.STAT.fast_cast] = 7 },      -- Lifestream Cape
     -- ...add the rest of your list here as you encounter them.
@@ -559,6 +598,246 @@ codex.SLOT_NAMES = {
     [13] = 'Left Ring',
     [14] = 'Right Ring',
     [15] = 'Back'
+}
+
+
+codex.BLUE_MAGIC = {
+    UNBRIDLED_SPELLS = S {
+        'Absolute Terror',
+        'Bilgestorm',
+        'Blistering Roar',
+        'Bloodrake',
+        'Carcharian Verve',
+        'Cesspool',
+        'Crashing Thunder',
+        'Cruel Joke',
+        'Droning Whirlwind',
+        'Gates of Hades',
+        'Harden Shell',
+        'Mighty Guard',
+        'Polar Roar',
+        'Pyric Bulwark',
+        'Tearing Gust',
+        'Thunderbolt',
+        'Tourbillion',
+        'Uproot',
+    },
+    PHYSICAL = {
+        ACC_FOCUS_SPELLS = S {
+            "Heavy Strike",
+        },
+        STR_FOCUS_SPELLS = S {
+            'Battle Dance', 'Bloodrake', 'Death Scissors', 'Dimensional Death',
+            'Empty Thrash', 'Quadrastrike', 'Sinker Drill', 'Spinal Cleave',
+            'Uppercut', 'Vertical Cleave'
+        },
+        DEX_FOCUS_SPELLS = S {
+            'Amorphic Spikes', 'Asuran Claws', 'Barbed Crescent', 'Claw Cyclone', 'Disseverment',
+            'Foot Kick', 'Frenetic Rip', 'Goblin Rush', 'Hysteric Barrage', 'Paralyzing Triad',
+            'Seedspray', 'Sickle Slash', 'Smite of Rage', 'Terror Touch', 'Thrashing Assault',
+            'Vanity Dive'
+        },
+        VIT_FOCUS_SPELLS = S {
+            'Body Slam', 'Cannonball', 'Delta Thrust', 'Glutinous Dart', 'Grand Slam',
+            'Power Attack', 'Quad. Continuum', 'Sprout Smack', 'Saurian Slide', 'Sweeping Gouge', 'Sub-zero Smash'
+        },
+        AGI_FOCUS_SPELLS = S {
+            'Benthic Typhoon', 'Feather Storm', 'Helldive', 'Hydro Shot', 'Jet Stream',
+            'Pinecone Bomb', 'Spiral Spin', 'Wild Oats'
+        },
+        STR_INT_FOCUS_SPELLS = S {
+            'Mandibular Bite', 'Queasyshroom'
+        },
+        MND_FOCUS_SPELLS = S {
+            'Ram Charge', 'Screwdriver', 'Tourbillion'
+        },
+        CHR_FOCUS_SPELLS = S {
+            'Bludgeon'
+        },
+        HP_FOCUS_SPELLS = S {
+            'Final Sting'
+        }
+    },
+    MAGICAL = {
+        MAB_INT_FOCUS_SPELLS = S {
+            'Blastbomb', 'Blazing Bound', 'Bomb Toss', 'Cursed Sphere', 'Dark Orb', 'Death Ray',
+            'Diffusion Ray', 'Droning Whirlwind', 'Embalming Earth', 'Firespit', 'Foul Waters',
+            'Ice Break', 'Leafstorm', 'Maelstrom', 'Rail Cannon', 'Regurgitation', 'Rending Deluge',
+            'Retinal Glare', 'Subduction', 'Tem. Upheaval', 'Water Bomb'
+        },
+        MND_FOCUS_SPELLS = S {
+            'Acrid Stream', 'Evryone. Grudge', 'Nectarous Deluge', 'Magic Hammer', 'Mind Blast', 'Scouring Spate'
+        },
+        CHR_FOCUS_SPELLS = S {
+            'Eyes On Me', 'Mysterious Light'
+        },
+        VIT_FOCUS_SPELLS = S {
+            'Atra. Libations', 'Entomb', 'Thermal Pulse'
+        },
+        AGI_FOCUS_SPELLS = S {
+            'Molting Plumage', 'Palling Salvo', 'Silent Storm'
+        },
+        STR_FOCUS_SPELLS = S {
+            'Blinding Fulgor', 'Searing Tempest'
+        },
+        INT_DEX_FOCUS_SPELLS = S {
+            'Anvil Lightning', 'Charged Whisker', 'Gates of Hades'
+        },
+        MACC_FOCUS_SPELLS = S {
+            '1000 Needles', 'Absolute Terror', 'Actinic Burst', 'Auroral Drape', 'Awful Eye',
+            'Blank Gaze', 'Blistering Roar', 'Blood Drain', 'Blood Saber', 'Chaotic Eye',
+            'Cimicine Discharge', 'Cold Wave', 'Corrosive Ooze', 'Demoralizing Roar', 'Digest',
+            'Dream Flower', 'Enervation', 'Feather Tickle', 'Filamented Hold', 'Frightful Roar',
+            'Geist Wall', 'Hecatomb Wave', 'Infrasonics', 'Jettatura', 'Light of Penance',
+            'Lowing', 'Mind Blast', 'Mortal Ray', 'MP Drainkiss', 'Osmosis', 'Reaving Wind',
+            'Sandspin', 'Sandspray', 'Sheep Song', 'Soporific', 'Sound Blast', 'Stinking Gas',
+            'Sub-zero Smash', 'Venom Shell', 'Voracious Trunk', 'Yawn'
+        },
+        BREATH_SPELLS = S {
+            'Bad Breath', 'Flying Hip Press', 'Frost Breath', 'Heat Breath',
+            'Hecatomb Wave', 'Magnetite Cloud', 'Poison Breath', 'Radiant Breath', 'Self-Destruct',
+            'Thunder Breath', 'Vapor Spray', 'Wind Breath'
+        },
+        STUN_SPELLS = S {
+            'Blitzstrahl', 'Frypan', 'Head Butt', 'Sudden Lunge', 'Tail slap', 'Temporal Shift',
+            'Thunderbolt', 'Whirl of Rage'
+        },
+        HEALING_SPELLS = S {
+            'Healing Breeze', 'Magic Fruit', 'Plenilune Embrace', 'Pollen', 'Restoral', 'White Wind',
+            'Wild Carrot'
+        },
+        SKILL_FOCUS_BUFF_SPELLS = S {
+            'Barrier Tusk', 'Diamondhide', 'Magic Barrier', 'Mighty Guard', 'Metallic Body', 'Plasma Charge',
+            'Pyric Bulwark', 'Reactor Cool',
+        },
+        BUFF_SPELLS = S {
+            'Amplification', 'Animating Wail', 'Battery Charge', 'Carcharian Verve', 'Cocoon',
+            'Erratic Flutter', 'Exuviation', 'Fantod', 'Feather Barrier', 'Harden Shell',
+            'Memento Mori', 'Mighty Guard', 'Nat. Meditation', 'Occultation', 'Orcish Counterstance', 'Refueling',
+            'Regeneration', 'Saline Coat', 'Triumphant Roar', 'Warm-Up', 'Winds of Promyvion',
+            'Zephyr Mantle'
+        }
+    }
+}
+
+codex.BLUE_MAGIC_SETS = {
+    PHYSICAL = {
+        ACC_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.physical,
+            codex.CASTING_SETS.blue.physical_acc,
+        },
+        STR_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.physical,
+            codex.CASTING_SETS.blue.physical_str,
+        },
+        DEX_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.physical,
+            codex.CASTING_SETS.blue.physical_dex,
+        },
+        VIT_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.physical,
+            codex.CASTING_SETS.blue.physical_vit,
+        },
+        AGI_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.physical,
+            codex.CASTING_SETS.blue.physical_agi,
+        },
+        STR_INT_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.physical,
+            codex.CASTING_SETS.blue.physical_str,
+            codex.CASTING_SETS.blue.physical_int,
+        },
+        MND_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.physical,
+            codex.CASTING_SETS.blue.physical_mnd,
+        },
+        CHR_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.physical,
+            codex.CASTING_SETS.blue.physical_chr,
+        },
+        HP_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.physical,
+            codex.CASTING_SETS.blue.physical_hp,
+        },
+    },
+
+    MAGICAL = {
+        MAB_INT_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.magical,
+            codex.CASTING_SETS.blue.magical_int,
+        },
+        MND_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.magical,
+            codex.CASTING_SETS.blue.magical_mnd,
+        },
+        CHR_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.magical,
+            codex.CASTING_SETS.blue.magical_chr,
+        },
+        VIT_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.magical,
+            codex.CASTING_SETS.blue.magical_vit,
+        },
+        AGI_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.magical,
+            codex.CASTING_SETS.blue.magical_agi,
+        },
+        STR_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.magical,
+            codex.CASTING_SETS.blue.magical_str,
+        },
+        INT_DEX_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.magical,
+            codex.CASTING_SETS.blue.magical_int,
+            codex.CASTING_SETS.blue.magical_dex,
+        },
+        MACC_FOCUS_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.magical,
+            codex.CASTING_SETS.blue.magical_macc,
+        },
+        BREATH_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.magical,
+            codex.CASTING_SETS.blue.magical_breath,
+        },
+        STUN_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.magical,
+            codex.CASTING_SETS.blue.magical_stun,
+        },
+        HEALING_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.magical,
+            codex.CASTING_SETS.blue.magical_healing,
+        },
+        SKILL_FOCUS_BUFF_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.magical,
+            codex.CASTING_SETS.blue.magical_skill_buff,
+        },
+        BUFF_SPELLS = {
+            codex.CASTING_SETS.blue.default,
+            codex.CASTING_SETS.blue.magical,
+            codex.CASTING_SETS.blue.magical_buff,
+        },
+    },
 }
 
 codex.SPELL_CASTING_SETS = {
@@ -733,6 +1012,55 @@ codex.SPELL_CASTING_SETS = {
     ["Cure"]       = { codex.CASTING_SETS.mnd, codex.CASTING_SETS.healing.default }
 }
 
+do
+    local function add_spell_casting_sets(spell_name, casting_keys)
+        if not spell_name or not casting_keys then return end
+
+        spell_name = tostring(spell_name)
+
+        local bucket = codex.SPELL_CASTING_SETS[spell_name]
+        if not bucket then
+            bucket = {}
+            codex.SPELL_CASTING_SETS[spell_name] = bucket
+        end
+
+        for _, key in ipairs(casting_keys) do
+            bucket[#bucket + 1] = key
+        end
+    end
+
+
+    local routing = codex.BLUE_MAGIC_SETS
+    if not routing then return end
+
+    -- Physical groups
+    local phys_src = codex.BLUE_MAGIC.PHYSICAL or {}
+    local phys_map = routing.PHYSICAL or {}
+
+    for group_name, casting_keys in pairs(phys_map) do
+        local spell_set = phys_src[group_name]
+        if spell_set then
+            for spell_name in pairs(spell_set) do
+                add_spell_casting_sets(spell_name, casting_keys)
+            end
+        end
+    end
+
+    -- Magical groups
+    local mag_src = codex.BLUE_MAGIC.MAGICAL or {}
+    local mag_map = routing.MAGICAL or {}
+
+    for group_name, casting_keys in pairs(mag_map) do
+        local spell_set = mag_src[group_name]
+        if spell_set then
+            for spell_name in pairs(spell_set) do
+                add_spell_casting_sets(spell_name, casting_keys)
+            end
+        end
+    end
+end
+
+
 codex.STAT_CAP = {
     haste = 25, -- gear haste cap (percent)
     pdt   = 50, -- reduction caps (percent)
@@ -741,17 +1069,17 @@ codex.STAT_CAP = {
 }
 
 codex.INVERTED_STATS = {
-    [codex.STAT.dt]                = true,
-    [codex.STAT.pdt]               = true,
-    [codex.STAT.mdt]               = true,
-    [codex.STAT.breath_dt]         = true,
+    [codex.STAT.dt]        = true,
+    [codex.STAT.pdt]       = true,
+    [codex.STAT.mdt]       = true,
+    [codex.STAT.breath_dt] = true,
 
-    [codex.STAT.pet_dt]            = true,
-    [codex.STAT.pet_pdt]           = true,
-    [codex.STAT.pet_mdt]           = true,
+    [codex.STAT.pet_dt]    = true,
+    [codex.STAT.pet_pdt]   = true,
+    [codex.STAT.pet_mdt]   = true,
 
-    [codex.STAT.delay]             = true,
-    [codex.STAT.fast_cast]         = true, -- For cast time reductions
+    [codex.STAT.delay]     = true,
+    [codex.STAT.fast_cast] = true, -- For cast time reductions
 }
 
 codex.ENHANCEMENT_VERBS = {
@@ -1516,5 +1844,104 @@ codex.WEAPON_SKILLS = {
         },
     },
 }
+
+
+function codex.get_spell_name(name)
+    if not res or not res.spells then return nil end
+    local s = res.spells:with('en', name); return s and s.id or nil
+end
+
+function codex.get_ability_recast(name)
+    local recasts = windower.ffxi.get_ability_recasts()
+    if not recasts or not res or not res.job_abilities then return false end
+    local ja = res.job_abilities:with("en", name)
+    if not ja then return false end
+    local id = ja.recast_id
+    return recasts[id]
+end
+
+function codex.get_spell_recast(name)
+    local recasts = windower.ffxi.get_spell_recasts()
+    if not recasts or not res or not res.spells then return false end
+    local spell = res.spells:with("en", name)
+    if not spell then return false end
+    return recasts[spell.recast_id]
+end
+
+function codex.player_can_cast(name)
+    if not name then
+        return false, nil, "no_name"
+    end
+
+    -- 1) Resolve the spell from resources by English name.
+    --    Use both 'en' and 'enl' to be forgiving about numerals, etc.
+    local spell = res.spells:with('en', name)
+                or res.spells:with('enl', name)
+    if not spell then
+        return false, nil, "not_found"
+    end
+
+    local player = windower.ffxi.get_player()
+    if not player then
+        return false, spell, "no_player"
+    end
+
+    local main_id   = player.main_job_id
+    local sub_id    = player.sub_job_id
+    local main_lvl  = player.main_job_level
+    local sub_lvl   = player.sub_job_level
+
+    -- 2) Check job + level requirement using the levels table from res.spells.
+    --    Example from spells.lua:
+    --    levels = { [3]=45, [7]=37, [22]=45 } for Flash, etc. :contentReference[oaicite:1]{index=1}
+    local req_main = spell.levels and spell.levels[main_id]
+    local req_sub  = spell.levels and spell.levels[sub_id]
+
+    local meets_level =
+        (req_main and main_lvl >= req_main) or
+        (req_sub  and sub_lvl  >= req_sub)
+
+    if not meets_level then
+        return false, spell, "job_or_level"
+    end
+
+    -- 3) Check “learned” for normal magic.
+    --    get_spells() returns [id] = true/false for *learned*, not castable. :contentReference[oaicite:2]{index=2}
+    local learned = windower.ffxi.get_spells()
+    if not learned[spell.id] then
+        return false, spell, "not_learned"
+    end
+
+    -- 4) For BlueMagic, also require that it’s *set*.
+    if spell.type == "BlueMagic" then
+        local blu_spell_ids
+
+        if player.main_job_id == 16 then
+            blu_spell_ids = windower.ffxi.get_mjob_data().spells
+        elseif player.sub_job_id == 16 then
+            blu_spell_ids = windower.ffxi.get_sjob_data().spells
+        end
+
+        -- If you’re not BLU main or sub, you can’t cast it.
+        if not blu_spell_ids then
+            return false, spell, "blu_not_job"
+        end
+
+        local is_set = false
+        for _, id in ipairs(blu_spell_ids) do
+            if id == spell.id then
+                is_set = true
+                break
+            end
+        end
+
+        if not is_set then
+            return false, spell, "blu_not_set"
+        end
+    end
+
+    return true, spell, nil
+end
+
 
 return codex

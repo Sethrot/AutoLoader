@@ -444,6 +444,10 @@ function utils.print_help_topic(topic)
   end
 end
 
+function utils.sanitize_spell_name(name)
+  return (tostring(name or ""):gsub("%.", ""):gsub("'", ""):gsub("%s+", "_"):lower())
+end
+
 function utils.sanitize(name)
   return (tostring(name or ""):gsub("'", ""):gsub("%s+", "_"):lower())
 end
