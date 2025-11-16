@@ -7,12 +7,12 @@ local autoloader = {}
 
 require("Modes")
 require("lists")
-local res                    = require("resources")
+local res                      = require("resources")
 
-local utils                  = require("autoloader-utils")
-local sets                   = require("autoloader-sets")
-local codex                  = require("autoloader-codex")
-local log                    = require("autoloader-logger")
+local utils                    = require("autoloader-utils")
+local sets                     = require("autoloader-sets")
+local codex                    = require("autoloader-codex")
+local log                      = require("autoloader-logger")
 
 autoloader.default_weapon_id   = 1
 autoloader.lockstyle           = nil
@@ -21,17 +21,17 @@ autoloader.auto_movement       = false
 autoloader.idle_mode           = "default"
 autoloader.melee_mode          = "default"
 autoloader.magic_mode          = "default"
-autoloader.use_auto_sets       = true
+autoloader.use_auto_sets       = false
 autoloader.auto_sets_threshold = 0.0075
 
-local _idle_mode             = M { ["description"] = "Idle", "default", "dt", "mdt" }
-local _melee_mode            = M { ["description"] = "Melee", "default", "acc", "dt", "mdt", "sb", "off" }
-local _magic_mode            = M { ["description"] = "Magic", "default", "acc", "mb" }
-local _auto_movement_mode    = M { ["description"] = "Movement", "off", "on" }
+local _idle_mode               = M { ["description"] = "Idle", "default", "dt", "mdt" }
+local _melee_mode              = M { ["description"] = "Melee", "default", "acc", "dt", "mdt", "sb", "off" }
+local _magic_mode              = M { ["description"] = "Magic", "default", "acc", "mb" }
+local _auto_movement_mode      = M { ["description"] = "Movement", "off", "on" }
 
-local _weapons               = {}
-local _current_weapon_id     = autoloader.default_weapon_id
-local _keybinds              = {}
+local _weapons                 = {}
+local _current_weapon_id       = autoloader.default_weapon_id
+local _keybinds                = {}
 
 
 local _mode_display_names = {
@@ -304,20 +304,6 @@ function autoloader.get_current_weapon()
     return _current_weapon_id and _current_weapon_id > 0 and _weapons[_current_weapon_id]
 end
 
-function autoloader.get_ability_recast(name)
-    local recasts = windower.ffxi.get_ability_recasts()
-    if not recasts or not res or not res.job_abilities then return false end
-    local ja = res.job_abilities:with("en", name)
-    if not ja then return false end
-    local id = ja.recast_id
-    return recasts[id]
-end
-
-function autoloader.get_spell_id(name)
-    if not res or not res.spells then return nil end
-    local s = res.spells:with('en', name); return s and s.id or nil
-end
-
 function autoloader.set_weapon(id, announce)
     _weapons = sets.get_weapons()
     id = tonumber(id)
@@ -514,65 +500,45 @@ local function get_ordered_mode_set_names(mode)
             set_names:append(normalized_base .. "." .. normalized_current .. ".weapon" .. tostring(_current_weapon_id))
         end
     end
-    log.dump(set_names)
     return set_names
-end
-
-local function get_ordered_precast_set_names(spell)
-    local set_names = L {}
-
-    local normalized_name = spell.english and utils.sanitize(spell.english)
-    if normalized_name then set_names:append("precast." .. normalized_name) end
-
-    if spell.action_type == "Magic" then
-        local base_name = spell.english and utils.sanitize(codex.get_base(spell.english))
-        if base_name then set_names:append("precast." .. base_name) end
-        set_names:append("fastcast")         -- The expected generic name.
-        set_names:append("precast.fastcast") -- TODO: Do some kind of normalization on save instead of guessing
-        set_names:append("precast.fast_cast")
-        set_names:append("fast_cast")
-    else
-        if normalized_name then set_names:append(normalized_name) end
-
-        if spell.action_type == "WeaponSkill" then
-            set_names:append("ws")          -- The expected generic name.
-            set_names:append("weaponskill") -- TODO: Do some kind of normalization on save instead of guessing
-            set_names:append("precast.ws")
-            set_names:append("precast.weaponskill")
-        end
-    end
-
-    return set_names:reverse()
 end
 
 local function get_ordered_midcast_set_names(spell)
     local set_names = L {}
 
-    local normalized_name = spell.english and utils.sanitize(spell.english)
+    local normalized_name = spell.english and utils.sanitize_spell_name(spell.english)
     if normalized_name then set_names:append("midcast." .. normalized_name) end
 
     if spell.action_type == "Magic" then
         if normalized_name then set_names:append(normalized_name) end
 
-        local base_name = spell.english and utils.sanitize(codex.get_base(spell.english))
-        if base_name then
-            set_names:append("midcast." .. base_name)
-            set_names:append(base_name)
+        local base_name = codex.get_base(spell.english)
+        local base_name_normalized = base_name and base_name ~= spell.english and utils.sanitize_spell_name(base_name)
+        if base_name_normalized then
+            set_names:append("midcast." .. base_name_normalized)
+            set_names:append(base_name_normalized)
         end
 
         local current_magic_mode = _magic_mode.current
         if current_magic_mode and current_magic_mode ~= "default" then
             set_names:append("midcast." .. current_magic_mode)
             if normalized_name then set_names:append("midcast." .. current_magic_mode .. "." .. normalized_name) end
-            if base_name then set_names:append("midcast." .. current_magic_mode .. "." .. base_name) end
+            if base_name_normalized then set_names:append("midcast." .. current_magic_mode .. "." .. base_name_normalized) end
         end
 
-        -- FIX: key codex with strings
-        local predefined_set = normalized_name and codex.SPELL_CASTING_SETS[normalized_name]
-        if predefined_set then set_names:append(predefined_set) end
+        local predefined_sets = spell.english and codex.SPELL_CASTING_SETS[spell.english]
+        if predefined_sets then
+           for i = #predefined_sets, 1, -1 do
+                set_names:append(predefined_sets[i])
+            end
+        end
 
-        local base_predefined_set = base_name and codex.SPELL_CASTING_SETS[base_name]
-        if base_predefined_set then set_names:append(base_predefined_set) end
+        local base_predefined_sets = base_name and base_name ~= spell.english and codex.SPELL_CASTING_SETS[base_name]
+        if base_predefined_sets then
+           for i = #base_predefined_sets, 1, -1 do
+                set_names:append(base_predefined_sets[i])
+            end
+        end
 
         local skill_name = spell.skill and utils.sanitize(spell.skill:match("^(%S+)"))
         if skill_name then set_names:append("midcast." .. skill_name) end
@@ -583,10 +549,41 @@ local function get_ordered_midcast_set_names(spell)
 end
 
 
+local function get_ordered_precast_set_names(spell)
+    local set_names = L {}
+
+    local normalized_name = spell.english and utils.sanitize_spell_name(spell.english)
+    if normalized_name then set_names:append("precast." .. normalized_name) end
+
+    if spell.action_type == "Magic" then
+        if codex.INSTANT_SPELLS[spell.english] == true then
+            return get_ordered_midcast_set_names(spell)
+        end
+
+        local base_name = spell.english and utils.sanitize_spell_name(codex.get_base(spell.english))
+        if base_name and base_name ~= spell.english then set_names:append("precast." .. base_name) end
+        set_names:append("fastcast")         -- The expected generic name.
+        set_names:append("precast.fastcast") -- TODO: Do some kind of normalization on save instead of guessing
+        set_names:append("precast.fast_cast")
+        set_names:append("fast_cast")
+    else
+        if normalized_name then set_names:append(normalized_name) end
+
+        if spell.type and spell.type:lower() == "weaponskill" then
+            set_names:append("ws")          -- The expected generic name.
+            set_names:append("weaponskill") -- TODO: Do some kind of normalization on save instead of guessing
+            set_names:append("precast.ws")
+            set_names:append("precast.weaponskill")
+        end
+    end
+
+    return set_names:reverse()
+end
+
 local function get_ordered_aftercast_set_names(spell)
     local set_names = L {}
 
-    local normalized_name = spell.english and utils.sanitize(spell.english)
+    local normalized_name = spell.english and utils.sanitize_spell_name(spell.english)
     if normalized_name then set_names:append("aftercast." .. normalized_name) end
 
     return set_names:reverse()
@@ -639,7 +636,6 @@ function status_change(new, old)
     log.debug(("Status %s -> %s"):format(old, new))
 
     if new == "Engaged" and _melee_mode.current ~= "off" then
-        log.dump(sets.build_set(get_ordered_mode_set_names(_melee_mode)))
         autoloader.equip_clean(sets.build_set(get_ordered_mode_set_names(_melee_mode)))
     elseif new == "Resting" then
         autoloader.equip_clean(sets.build_set({ "idle.rest", "idle.resting", "rest", "resting" }))
@@ -864,7 +860,7 @@ end
 autoloader.stub_before_self_command = function() end
 before_self_command = autoloader.stub_before_self_command
 function self_command(cmd)
-    local terminate = utils.call_hook("before_self_command", autoloader.stub_before_self_command)
+    local terminate = utils.call_hook("before_self_command", autoloader.stub_before_self_command, cmd)
     if terminate then return end
 
     local a1, rest = utils.split_args(cmd)
