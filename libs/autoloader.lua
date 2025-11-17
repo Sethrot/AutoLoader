@@ -33,12 +33,6 @@ local _weapons                 = {}
 local _current_weapon_id       = autoloader.default_weapon_id
 local _keybinds                = {}
 
-
-
-local function echo(msg)
-    windower.send_command("input /echo " .. msg)
-end
-
 function autoloader.register_keybind(key, bind)
     if key and type(key) == "string" and bind and type(bind) == "string" then
         _keybinds[key] = bind
@@ -238,14 +232,14 @@ function autoloader.set_idle_mode(value)
     if not ok then
         log.error(err); return
     end
-    echo("Idle: " .. utils.pretty_mode_value(autoloader.get_current_idle_mode()))
+    utils.echo("Idle: " .. utils.pretty_mode_value(autoloader.get_current_idle_mode()))
     autoloader.status_refresh()
 end
 
 local function cycle_idle_mode()
     log.debug("Cycling idle.")
     _idle_mode:cycle()
-    echo("Idle: " .. utils.pretty_mode_value(autoloader.get_current_idle_mode()))
+    utils.echo("Idle: " .. utils.pretty_mode_value(autoloader.get_current_idle_mode()))
     autoloader.status_refresh()
 end
 function autoloader.get_current_idle_mode()
@@ -257,13 +251,13 @@ function autoloader.set_melee_mode(value)
     if not ok then
         log.error(err); return
     end
-    echo("Melee: " .. utils.pretty_mode_value(autoloader.get_current_melee_mode()))
+    utils.echo("Melee: " .. utils.pretty_mode_value(autoloader.get_current_melee_mode()))
     autoloader.status_refresh()
 end
 
 local function cycle_melee_mode()
     _melee_mode:cycle()
-    echo("Melee: " .. utils.pretty_mode_value(autoloader.get_current_melee_mode()))
+    utils.echo("Melee: " .. utils.pretty_mode_value(autoloader.get_current_melee_mode()))
     autoloader.status_refresh()
 end
 function autoloader.get_current_melee_mode()
@@ -273,13 +267,13 @@ end
 function autoloader.set_magic_mode(value)
     local ok, err = try_set_mode(_magic_mode, value)
     if not ok then log.error(err) end
-    echo("Magic: " .. utils.pretty_mode_value(autoloader.get_current_magic_mode()))
+    utils.echo("Magic: " .. utils.pretty_mode_value(autoloader.get_current_magic_mode()))
     autoloader.status_refresh()
 end
 
 local function cycle_magic_mode()
     _magic_mode:cycle()
-    echo("Magic: " .. utils.pretty_mode_value(autoloader.get_current_magic_mode()))
+    utils.echo("Magic: " .. utils.pretty_mode_value(autoloader.get_current_magic_mode()))
     autoloader.status_refresh()
 end
 function autoloader.get_current_magic_mode()
@@ -303,18 +297,18 @@ function autoloader.set_weapon(id, announce)
         _current_weapon_id = weapon.id
         local current_weapon = _weapons[_current_weapon_id]
         autoloader.status_refresh()
-        if announce then echo(("Weapon: %s"):format(pretty_weapon_display(current_weapon))) end
+        if announce then utils.echo(("Weapon: %s"):format(pretty_weapon_display(current_weapon))) end
         return true, nil
     elseif id == autoloader.default_weapon_id then
         -- The default isn't present, fallback to .weapon0
         _current_weapon_id = 0
         autoloader.status_refresh()
-        if announce then echo("Weapon: None") end
+        if announce then utils.echo("Weapon: None") end
         return true, nil
     elseif id == 0 then
         _current_weapon_id = 0
         autoloader.status_refresh()
-        if announce then echo("Weapon: None") end
+        if announce then utils.echo("Weapon: None") end
         return true, nil
     else
         return false, "Did not find weapon with ID: " .. id
@@ -689,11 +683,11 @@ local function handle_log_command(cmd)
     if cmd and cmd ~= "" then
         log.debug(cmd)
         log.mode:set(cmd)
-        echo("Log: " .. log.mode.current)
+        utils.echo("Log: " .. log.mode.current)
         return
     end
     log.mode:cycle()
-    echo("Log: " .. log.mode.current)
+    utils.echo("Log: " .. log.mode.current)
 end
 
 local function handle_idle_command(cmd)

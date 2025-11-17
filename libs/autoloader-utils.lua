@@ -38,6 +38,10 @@ function utils.get_keys_sorted(map)
   return utils.get_keys(map):sort()
 end
 
+function utils.echo(msg)
+    windower.send_command("input /echo " .. msg)
+end
+
 local _mode_display_names = {
     ["default"] = "Default",
     ["dt"] = "DT",
