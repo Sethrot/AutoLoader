@@ -2,7 +2,6 @@
 -- Minimal Dark Knight (DRK) configuration file with AutoLoader support
 
 local autoloader = require("autoloader")
-local common_job = require("common_job")
 autoloader.auto_movement = "on"
 
 -- Remember to save your basic sets in-game using commands:
