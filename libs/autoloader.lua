@@ -21,8 +21,8 @@ autoloader.auto_movement       = false
 autoloader.idle_mode           = "default"
 autoloader.melee_mode          = "default"
 autoloader.magic_mode          = "default"
-autoloader.use_auto_sets       = false
-autoloader.auto_sets_threshold = 0.0075
+autoloader.use_auto_sets       = true
+autoloader.auto_sets_threshold = 0.025
 
 local _idle_mode               = M { ["description"] = "Idle", "default", "dt", "mdt" }
 local _melee_mode              = M { ["description"] = "Melee", "default", "acc", "dt", "mdt", "sb", "off" }
@@ -34,16 +34,6 @@ local _current_weapon_id       = autoloader.default_weapon_id
 local _keybinds                = {}
 
 
-local _mode_display_names = {
-    ["default"] = "Default",
-    ["dt"] = "DT",
-    ["mdt"] = "MDT",
-    ["acc"] = "Accuracy",
-    ["sb"] = "Subtle Blow",
-    ["mb"] = "Magic Burst",
-    ["on"] = "On",
-    ["off"] = "Off",
-}
 
 local function echo(msg)
     windower.send_command("input /echo " .. msg)
@@ -80,10 +70,6 @@ function autoloader.equip_clean(set)
 
         equip(set)
     end
-end
-
-local function pretty_mode_value(value)
-    return _mode_display_names[value] or value
 end
 
 local function pretty_weapon_display(weapon)
@@ -237,13 +223,13 @@ function autoloader.set_movement_mode(value)
     if not ok then
         log.error(err); return
     end
-    log.info(("Movement Polling: %s"):format(pretty_mode_value(_auto_movement_mode.current)))
+    log.info(("Movement Polling: %s"):format(utils.pretty_mode_value(_auto_movement_mode.current)))
     update_movement_polling()
 end
 
 local function cycle_movement_mode()
     _auto_movement_mode:cycle()
-    log.info(("Movement Polling: %s"):format(pretty_mode_value(_auto_movement_mode.current)))
+    log.info(("Movement Polling: %s"):format(utils.pretty_mode_value(_auto_movement_mode.current)))
     update_movement_polling()
 end
 
@@ -252,14 +238,14 @@ function autoloader.set_idle_mode(value)
     if not ok then
         log.error(err); return
     end
-    echo("Idle: " .. pretty_mode_value(autoloader.get_current_idle_mode()))
+    echo("Idle: " .. utils.pretty_mode_value(autoloader.get_current_idle_mode()))
     autoloader.status_refresh()
 end
 
 local function cycle_idle_mode()
     log.debug("Cycling idle.")
     _idle_mode:cycle()
-    echo("Idle: " .. pretty_mode_value(autoloader.get_current_idle_mode()))
+    echo("Idle: " .. utils.pretty_mode_value(autoloader.get_current_idle_mode()))
     autoloader.status_refresh()
 end
 function autoloader.get_current_idle_mode()
@@ -271,13 +257,13 @@ function autoloader.set_melee_mode(value)
     if not ok then
         log.error(err); return
     end
-    echo("Melee: " .. pretty_mode_value(autoloader.get_current_melee_mode()))
+    echo("Melee: " .. utils.pretty_mode_value(autoloader.get_current_melee_mode()))
     autoloader.status_refresh()
 end
 
 local function cycle_melee_mode()
     _melee_mode:cycle()
-    echo("Melee: " .. pretty_mode_value(autoloader.get_current_melee_mode()))
+    echo("Melee: " .. utils.pretty_mode_value(autoloader.get_current_melee_mode()))
     autoloader.status_refresh()
 end
 function autoloader.get_current_melee_mode()
@@ -287,13 +273,13 @@ end
 function autoloader.set_magic_mode(value)
     local ok, err = try_set_mode(_magic_mode, value)
     if not ok then log.error(err) end
-    echo("Magic: " .. pretty_mode_value(autoloader.get_current_magic_mode()))
+    echo("Magic: " .. utils.pretty_mode_value(autoloader.get_current_magic_mode()))
     autoloader.status_refresh()
 end
 
 local function cycle_magic_mode()
     _magic_mode:cycle()
-    echo("Magic: " .. pretty_mode_value(autoloader.get_current_magic_mode()))
+    echo("Magic: " .. utils.pretty_mode_value(autoloader.get_current_magic_mode()))
     autoloader.status_refresh()
 end
 function autoloader.get_current_magic_mode()
@@ -779,7 +765,7 @@ Topic('idle', {
     usage    = { "idle", "idle <mode>" },
     params   = { "<mode> ::= default | dt | mdt" },
     examples = { "gs c a idle", "gs c a idle default", "gs c a idle dt" },
-    dynamic  = function() return "Current: " .. pretty_mode_value(_idle_mode.current) end,
+    dynamic  = function() return "Current: " .. utils.pretty_mode_value(_idle_mode.current) end,
 })
 
 Topic('melee', {
@@ -788,7 +774,7 @@ Topic('melee', {
     usage    = { "melee", "melee <mode>" },
     params   = { "<mode> ::= default | acc | dt | mdt | sb | off" },
     examples = { "gs c a melee default", "gs c a  melee acc", "gs c a melee off" },
-    dynamic  = function() return "Current: " .. pretty_mode_value(_melee_mode.current) end,
+    dynamic  = function() return "Current: " .. utils.pretty_mode_value(_melee_mode.current) end,
 })
 
 Topic('magic', {
@@ -797,7 +783,7 @@ Topic('magic', {
     usage    = { "magic", "magic <mode>" },
     params   = { "<mode> ::= default | macc | mb" },
     examples = { "gs c a magic default", "gs c a magic macc" },
-    dynamic  = function() return "Current: " .. pretty_mode_value(_magic_mode.current) end,
+    dynamic  = function() return "Current: " .. utils.pretty_mode_value(_magic_mode.current) end,
 })
 
 Topic('weapon', {
@@ -819,7 +805,7 @@ Topic('movement', {
     usage    = { "movement", "movement <mode>" },
     params   = { "<mode> ::= on | off" },
     examples = { "gs c a movement on", "gs c a movement off" },
-    dynamic  = function() return "Current: " .. pretty_mode_value(_auto_movement_mode.current) end,
+    dynamic  = function() return "Current: " .. utils.pretty_mode_value(_auto_movement_mode.current) end,
 })
 
 Topic('log', {
@@ -831,7 +817,7 @@ Topic('log', {
     dynamic  = function()
         local m = log and log.mode
         local val = m and (m.value or m.current) or "off"
-        return "Current: " .. pretty_mode_value(val)
+        return "Current: " .. utils.pretty_mode_value(val)
     end,
 })
 
