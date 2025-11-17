@@ -199,16 +199,16 @@ function sets.get(name, use_auto_sets)
 
   name = utils.sanitize(name)
   local filename = ("%s%s%s.lua"):format(get_exported_file_prefix(), get_job_prefix(), name)
-  log.debug(("Looking for file: %s"):format(filename))
 
   -- Return cached set
-  if _cache and _cache[name] then return _cache[name] end
+  if _cache and _cache[name] then
+    return _cache[name]
+  end
 
   -- Try to load set from current job path
   local job_file = utils.join_paths(get_job_path(), filename)
   local set = windower.file_exists(job_file) and load_set(job_file)
   if set then
-    log.debug("Set from job_file: " .. tostring(set))
     _cache[name] = set
     return _cache[name]
   end
@@ -218,7 +218,6 @@ function sets.get(name, use_auto_sets)
     local auto_file = utils.join_paths(get_auto_path(), filename)
     local auto_set = windower.file_exists(auto_file) and load_set(auto_file)
     if auto_set then
-      log.debug("Set from auto_file: " .. tostring(auto_set))
       _cache[name] = auto_set
       return _cache[name]
     end

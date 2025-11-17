@@ -15,7 +15,7 @@ local _verbosity_level = {
 local _verbosity_display = {
   [logger.VERBOSITY .OFF] = "Off",
   [logger.VERBOSITY .ERROR] = "ERROR",
-  [logger.VERBOSITY .INFO] = "INFO",
+  [logger.VERBOSITY .INFO] = "Info",
   [logger.VERBOSITY .DEBUG] = "Debug",
 }
 

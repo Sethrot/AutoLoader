@@ -1,10 +1,9 @@
--- SPDX-License-Identifier: BSD-3-Clause
--- Copyright (c) 2025 NeatMachine
-
 -- Seloan_DRK.lua
 -- Minimal Dark Knight (DRK) configuration file with AutoLoader support
 
 local autoloader = require("autoloader")
+local common_job = require("common_job")
+autoloader.auto_movement = "on"
 
 -- Remember to save your basic sets in-game using commands:
 -- //gs c auto sets save idle
@@ -22,3 +21,12 @@ local autoloader = require("autoloader")
 
 -- //gs c auto sets save drain
 ------ This will be recognized by Drain II, III as well. (and Aspir)
+
+
+
+function before_self_command(cmd)
+    if cmd == "utsusemi" then
+        common_job.auto_utsusemi()
+        return true
+    end
+end

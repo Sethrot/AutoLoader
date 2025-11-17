@@ -38,6 +38,22 @@ function utils.get_keys_sorted(map)
   return utils.get_keys(map):sort()
 end
 
+local _mode_display_names = {
+    ["default"] = "Default",
+    ["dt"] = "DT",
+    ["mdt"] = "MDT",
+    ["acc"] = "Accuracy",
+    ["sb"] = "Subtle Blow",
+    ["mb"] = "Magic Burst",
+    ["on"] = "On",
+    ["off"] = "Off",
+}
+
+
+function utils.pretty_mode_value(value)
+    return _mode_display_names[value] or value
+end
+
 function utils.split3_by_dot(s)
   local a, b, c = s:match("^([^%.]+)%.([^%.]+)%.(.+)$")
   if a then return a, b, c end
@@ -442,6 +458,10 @@ function utils.print_help_topic(topic)
   if topic.dynamic then
     local ok, dyn = pcall(topic.dynamic); if ok and dyn and dyn ~= "" then print(dyn) end
   end
+end
+
+function utils.sanitize_spell_name(name)
+  return (tostring(name or ""):gsub("%.", ""):gsub("'", ""):gsub("%s+", "_"):lower())
 end
 
 function utils.sanitize(name)
