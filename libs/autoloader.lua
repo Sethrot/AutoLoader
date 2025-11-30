@@ -534,29 +534,49 @@ local function get_ordered_precast_set_names(spell)
 
     local normalized_name = spell.english and utils.sanitize_spell_name(spell.english)
     if normalized_name then set_names:append("precast." .. normalized_name) end
+		
+	if spell.action_type == "Magic" and not spell.type == "BardSong" and not spell.english:startswith("Utsusemi") and not spell.english:startswith('Cure') and not spell.english:startswith('Stoneskin')  then
+		local base_name = spell.english and utils.sanitize(codex.get_base(spell.english))
+		if base_name then set_names:append("precast." .. base_name) end
+		set_names:append("fastcast")         -- The expected generic name.
+		set_names:append("precast.fastcast") -- TODO: Do some kind of normalization on save instead of guessing
+		set_names:append("precast.fast_cast")
+		set_names:append("fast_cast")
+	else
+		if spell.type == "BardSong" then
+			local base_name = spell.english and utils.sanitize(codex.get_base(spell.english))
+			if base_name then set_names:append("precast." .. base_name) end
+			set_names:append("fastcast.bardsong") 
+		else
+			if spell.english:startswith("Utsusemi") then
+				local base_name = spell.english and utils.sanitize(codex.get_base(spell.english))
+				if base_name then set_names:append("precast." .. base_name) end
+				set_names:append("fastcast.utsusemi") 
+			else
+				if spell.english:startswith('Cure') then
+					local base_name = spell.english and utils.sanitize(codex.get_base(spell.english))
+					if base_name then set_names:append("precast." .. base_name) end
+					set_names:append("fastcast.cure") 
+				else
+					if spell.english:startswith('Stoneskin') then
+						local base_name = spell.english and utils.sanitize(codex.get_base(spell.english))
+						if base_name then set_names:append("precast." .. base_name) end
+						set_names:append("fastcast.stoneskin") 
+					else
+						if normalized_name then set_names:append(normalized_name) end
 
-    if spell.action_type == "Magic" then
-        if codex.INSTANT_SPELLS[spell.english] == true then
-            return get_ordered_midcast_set_names(spell)
-        end
-
-        local base_name = spell.english and utils.sanitize_spell_name(codex.get_base(spell.english))
-        if base_name and base_name ~= spell.english then set_names:append("precast." .. base_name) end
-        set_names:append("fastcast")         -- The expected generic name.
-        set_names:append("precast.fastcast") -- TODO: Do some kind of normalization on save instead of guessing
-        set_names:append("precast.fast_cast")
-        set_names:append("fast_cast")
-    else
-        if normalized_name then set_names:append(normalized_name) end
-
-        if spell.type and spell.type:lower() == "weaponskill" then
-            set_names:append("ws")          -- The expected generic name.
-            set_names:append("weaponskill") -- TODO: Do some kind of normalization on save instead of guessing
-            set_names:append("precast.ws")
-            set_names:append("precast.weaponskill")
+						if spell.action_type == "WeaponSkill" then
+							set_names:append("ws")          -- The expected generic name.
+							set_names:append("weaponskill") -- TODO: Do some kind of normalization on save instead of guessing
+							set_names:append("precast.ws")
+							set_names:append("precast.weaponskill")
+						end
+					end
+				end
+			end
         end
     end
-
+    
     return set_names:reverse()
 end
 
